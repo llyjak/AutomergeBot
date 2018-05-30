@@ -33,7 +33,7 @@ AutomergeBot works in a context of 2 branches: source branch and branch to which
    R75 -> R76 -> R76.1 -> develop
    >Eg. changes pushed to R75 must go down to all release branches. But changes pushed to R76 goes only to R76.1 and develop
    
-2. Release braches configuration
+2. Release branches configuration
    - marked as "[protected](https://help.github.com/articles/about-protected-branches/)" in GitHub
    - marked as "Require pull request reviews before merging" 
 
