@@ -9,10 +9,11 @@ Applicable only to GitHub.
 - AutomergeBot is attached to GitHub as a [webhook](https://developer.github.com/webhooks/).  
 - AutomergeBot uses it's dedicated GitHub account to interact with [GitHub API](https://developer.github.com/v3/) (creating pull requests etc.)
 - Merging directions are configurable
+- Reacts to pushed changes event. Does not work for changes pushed when not running.
 
 It reacts to events (currently only "push" event is handled).
 If changes are pushed onto monitored branch it starts process of merging it to configured destination branch.  
-AutomergeBot works in a context of 2 branches: source branch and branch to which changes should be merged.
+AutomergeBot's unit of work context is 2 branches: source branch (containing pushed changes) and destination branch to which changes should be merged.
 
 ### Merging process
 1. Create temporary branch containing pushed changes
