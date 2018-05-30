@@ -2,7 +2,7 @@
 AutomergeBot for GitHub
 
 ## What it is?
-It is simple service which automates merging changes between branches with pull requests.
+It is simple service which automates merging changes between branches using pull requests.
 Applicable only to GitHub.
 
 ## How it works?
