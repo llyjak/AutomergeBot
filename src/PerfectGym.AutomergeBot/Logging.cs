@@ -29,6 +29,7 @@ namespace PerfectGym.AutomergeBot
 
         public static Logger CreateSerilogLogger(string logFilesBasePath)
         {
+            logFilesBasePath = logFilesBasePath ?? string.Empty;
             return new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .WriteTo.Console(
@@ -40,14 +41,34 @@ namespace PerfectGym.AutomergeBot
                     fileSizeLimitBytes: 10 * 1024 * 1024,
                     rollOnFileSizeLimit: true,
                     retainedFileCountLimit: 10)
+                .WriteTo.Logger(ConfigureEasyMonitoringFileLogger(logFilesBasePath))
                 .MinimumLevel.ControlledBy(LoggingLevelSwitch)
                 .Filter.ByExcluding(MicrosoftNotImportantLogsSelector)
                 .CreateLogger();
         }
 
+        private static Action<LoggerConfiguration> ConfigureEasyMonitoringFileLogger(string logFilesBasePath)
+        {
+            return lc => lc
+
+                .WriteTo.File(
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {pushNotificationContext}{NewLine}{Exception}",
+                    path: Path.Combine(logFilesBasePath, $"{nameof(AutomergeBot.AutomergeBot)}_easy_monitoring.log"),
+                    fileSizeLimitBytes: 10 * 1024 * 1024,
+                    rollOnFileSizeLimit: true,
+                    retainedFileCountLimit: 10)
+                .MinimumLevel.Information()
+                .Filter.ByIncludingOnly(AutomergeBotLogsFilter);
+        }
+
         private static bool MicrosoftNotImportantLogsSelector(LogEvent le)
         {
-            return le.Level < LogEventLevel.Warning && ((ScalarValue)le.Properties[Constants.SourceContextPropertyName]).Value.ToString().StartsWith("Microsoft");
+            return le.Level < LogEventLevel.Warning && ((ScalarValue)le.Properties[Constants.SourceContextPropertyName]).Value.ToString().StartsWith("Microsoft", StringComparison.Ordinal);
+        }
+
+        private static bool AutomergeBotLogsFilter(LogEvent le)
+        {
+            return ((ScalarValue)le.Properties[Constants.SourceContextPropertyName]).Value.ToString().StartsWith("PerfectGym.AutomergeBot.AutomergeBot", StringComparison.Ordinal);
         }
 
         public static void SetMinimulLoggingLevel(LogEventLevel level)

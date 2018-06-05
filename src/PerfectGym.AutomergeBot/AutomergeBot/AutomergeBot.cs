@@ -42,8 +42,8 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                         if (!IsMonitoredRepository(pushInfo, repoContext)) return;
                         if (!IsPushAddingNewCommits(pushInfo)) return;
                         if (IsPushedToIgnoredBranch(pushInfo)) return;
-                        if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
                         if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
+                        if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
 
                         _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
                             destinationBranchNames.Length, destinationBranchNames);

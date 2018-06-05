@@ -17,7 +17,7 @@ namespace PerfectGym.AutomergeBot
         }
         public bool VerifySecret(string requestSignature, string requestPayload)
         {
-            if (requestSignature.StartsWith("sha1=", StringComparison.OrdinalIgnoreCase))
+            if ((requestSignature ?? string.Empty).StartsWith("sha1=", StringComparison.OrdinalIgnoreCase))
             {
                 var signature = requestSignature.Substring("sha1=".Length);
                 var secretBytes = Encoding.UTF8.GetBytes(_secret);
