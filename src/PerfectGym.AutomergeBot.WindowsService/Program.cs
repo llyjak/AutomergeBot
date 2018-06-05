@@ -25,6 +25,7 @@ namespace PerfectGym.AutomergeBot.WindowsService
             var pathToContentRoot = GetPathToContentRoot();
 
             return WebHost.CreateDefaultBuilder(args)
+                .UseUrls("http://*:7654")
                 .UseStartup<Startup>()
                 .UseContentRoot(pathToContentRoot)
                 .Build();

@@ -18,6 +18,7 @@ namespace PerfectGym.AutomergeBot.ConsoleHost
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .UseUrls("http://*:7654")
                 .UseStartup<Startup>()
                 .Build();
     }
