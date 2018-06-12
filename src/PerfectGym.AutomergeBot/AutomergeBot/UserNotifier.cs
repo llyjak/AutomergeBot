@@ -41,7 +41,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                           + "   ```\r\n"
                           + $"   git merge --no-ff origin/{pullRequestBranchName}\r\n"
                           + "   ```\r\n"
-                          + $"4. Approve [pull request]({pullRequestUrl}) review\r\n"
+                          + $"4. Approve [pull request]({pullRequestUrl}/files#submit-review) review\r\n"
                           + $"5. Push changes to {destinationBranch}\r\n"
                           + "   ```\r\n"
                           + $"   git push origin {destinationBranch}\r\n"

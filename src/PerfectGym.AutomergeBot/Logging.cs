@@ -50,15 +50,20 @@ namespace PerfectGym.AutomergeBot
         private static Action<LoggerConfiguration> ConfigureEasyMonitoringFileLogger(string logFilesBasePath)
         {
             return lc => lc
-
+                .Enrich.FromLogContext()
                 .WriteTo.File(
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {pushNotificationContext}{NewLine}{Exception}",
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{TraceIdentifier}] {Message:lj} {pushNotificationContext}{NewLine}{Exception}",
                     path: Path.Combine(logFilesBasePath, $"{nameof(AutomergeBot.AutomergeBot)}_easy_monitoring.log"),
                     fileSizeLimitBytes: 10 * 1024 * 1024,
                     rollOnFileSizeLimit: true,
                     retainedFileCountLimit: 10)
                 .MinimumLevel.Information()
-                .Filter.ByIncludingOnly(AutomergeBotLogsFilter);
+                .Filter.ByIncludingOnly(@event => LevelIsMinimumError(@event) || AutomergeBotLogsFilter(@event));
+        }
+
+        private static bool LevelIsMinimumError(LogEvent @event)
+        {
+            return @event.Level >= LogEventLevel.Error;
         }
 
         private static bool MicrosoftNotImportantLogsSelector(LogEvent le)

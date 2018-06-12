@@ -50,7 +50,6 @@ namespace PerfectGym.AutomergeBot
             logger.LogInformation("Starting...");
 
             var env = app.ApplicationServices.GetService<IHostingEnvironment>();
-            LogConfigurationUsed(app.ApplicationServices, logger);
 
             if (env.IsDevelopment())
             {
@@ -60,6 +59,7 @@ namespace PerfectGym.AutomergeBot
             UpdateMergeDirectionsProviderConfiguration(app.ApplicationServices);
 
             RegisterConfigurationChangedHandler(app);
+            LogConfigurationUsed(app.ApplicationServices, logger);
 
             app.Run(HandleRequest);
             logger.LogInformation("Started");
