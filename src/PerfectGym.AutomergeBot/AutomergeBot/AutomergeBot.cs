@@ -31,44 +31,41 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
         public void Handle(PushInfoModel pushInfo)
         {
-            using (_logger.BeginScope("{@pushNotificationContext}", pushInfo))
+            _logger.LogInformation("Started processing push notification {@pushNotificationContext}", pushInfo);
+            try
             {
-                _logger.LogInformation("Started processing push notification");
-                try
+                using (var repoContext =
+                    new RepositoryConnectionContext.RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
                 {
-                    using (var repoContext =
-                        new RepositoryConnectionContext.RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
-                    {
-                        if (!IsMonitoredRepository(pushInfo, repoContext)) return;
-                        if (!IsPushAddingNewCommits(pushInfo)) return;
-                        if (IsPushedToIgnoredBranch(pushInfo)) return;
+                    if (!IsMonitoredRepository(pushInfo, repoContext)) return;
+                    if (!IsPushAddingNewCommits(pushInfo)) return;
+                    if (IsPushedToIgnoredBranch(pushInfo)) return;
                         if (IsContainingTempBranches(pushInfo, repoContext, out var branches))
                         {
                             DeleteBranches(branches, repoContext);
                         }
-                        if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
-                        if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
+                    if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
+                    if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
 
-                        _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
-                            destinationBranchNames.Length, destinationBranchNames);
-                        foreach (var destinationBranchName in destinationBranchNames)
-                        {
-                            _mergePerformer.TryMergePushedChanges(pushInfo, destinationBranchName, repoContext);
-                        }
+                    _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
+                        destinationBranchNames.Length, destinationBranchNames);
+                    foreach (var destinationBranchName in destinationBranchNames)
+                    {
+                        _mergePerformer.TryMergePushedChanges(pushInfo, destinationBranchName, repoContext);
                     }
                 }
-                catch (AggregateException e)
-                {
-                    LogAggregateException(e);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Error during processing push notification", pushInfo);
-                }
-                finally
-                {
-                    _logger.LogInformation("Finished processing push notification");
-                }
+            }
+            catch (AggregateException e)
+            {
+                LogAggregateException(e);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error during processing push notification", pushInfo);
+            }
+            finally
+            {
+                _logger.LogInformation("Finished processing push notification");
             }
         }
 
