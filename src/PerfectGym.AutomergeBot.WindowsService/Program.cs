@@ -12,7 +12,6 @@ namespace PerfectGym.AutomergeBot.WindowsService
         {
             Logging.EnsureLoggingInitialized(GetPathToContentRoot());
             StartService(args);
-
         }
 
         private static void StartService(string[] args)
