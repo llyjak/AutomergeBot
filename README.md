@@ -22,6 +22,17 @@ AutomergeBot's unit of work context is 2 branches: source branch (containing pus
    - If there are conflicts notify changes author and provides detailed instructions what to do
    - If merged successfully remove temporary branch
 
+## How to install
+1. Build in Release mode 
+   `msbuild /p:Configuration=Release PerfectGym.AutomergeBot.sln`
+2. Copy windows service binaries to machine You want
+   Binaries folder: `PerfectGym.AutomergeBot.WindowsService\bin\Release`
+3. Install as a Windows service
+   `sc create PerfectGym.AutomergeBot binPath=[full path]\PerfectGym.AutomergeBot.WindowsService.exe`
+4. Start service   
+  `sc start PerfectGym.AutomergeBot`
+5. Service listens GitHub webhook events on a local url: `http://*:7654`
+
 ## Problems it resolves
 
 
