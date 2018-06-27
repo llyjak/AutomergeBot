@@ -35,7 +35,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                           + "How to do it (using the GIT command line):\r\n"
                           + $"1. Fetch changes from server and checkout '{destinationBranch}' branch\r\n"
                           + "   ```\r\n"
-                          + $"   git fetch; git checkout {destinationBranch}; " + "git reset --hard @{u}\r\n"
+                          + $"   git fetch && git checkout {destinationBranch} && " + "git reset --hard @{u}\r\n"
                           + "   ```\r\n"
                           + $"2. Merge 'origin/{pullRequestBranchName}' branch and resolve conflicts\r\n"
                           + "   ```\r\n"
