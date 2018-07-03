@@ -7,7 +7,7 @@ Applicable only to GitHub.
 
 ## How it works?
 - AutomergeBot is attached to GitHub as a [webhook](https://developer.github.com/webhooks/).  
-- AutomergeBot uses it's dedicated GitHub account to interact with [GitHub API](https://developer.github.com/v3/) (creating pull requests etc.)
+- AutomergeBot uses GitHub account (you must create such account) to interact with [GitHub API](https://developer.github.com/v3/) (creating pull requests etc.)
 - Merging directions are configurable
 - Reacts to pushed changes event. Does not work for changes pushed when not running.
 
