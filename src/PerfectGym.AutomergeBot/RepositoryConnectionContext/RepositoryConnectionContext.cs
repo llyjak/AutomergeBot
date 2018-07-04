@@ -126,6 +126,21 @@ namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
             CreateGitHubClient().Issue.Comment.Create(_repositoryOwner, _repositoryName, pullRequestNumber, comment).Wait();
         }
 
+        public BranchName[] GetCommitParents(string pushInfoHeadCommitSha)
+        {
+            _logger.LogDebug($"Getting parents for commit {pushInfoHeadCommitSha}");
+            var headCommit = CreateGitHubClient().Git.Commit.Get(_repositoryOwner, _repositoryName, pushInfoHeadCommitSha).Result;
+            if (headCommit.Parents.Count < 2) return null;
+            var branches = CreateGitHubClient().Repository.Branch.GetAll(_repositoryOwner, _repositoryName).Result;
+            var parents = new BranchName[headCommit.Parents.Count - 1];
+            for (int i = 1; i < headCommit.Parents.Count; i++)
+            {
+                var parent = branches.First(branch => branch.Commit.Sha == headCommit.Parents[i].Sha && branch.Commit.Sha != pushInfoHeadCommitSha);
+                parents[i - 1] = new BranchName(parent.Name);
+            }
+            return parents;
+        }
+
         /// <summary>
         /// Removes "refs/" prefix from git ref string.
         /// Probably there is bug in a Octokit's Delete method.

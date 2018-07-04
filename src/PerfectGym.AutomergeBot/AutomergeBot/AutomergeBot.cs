@@ -41,6 +41,10 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                     {
                         if (!IsMonitoredRepository(pushInfo, repoContext)) return;
                         if (!IsPushAddingNewCommits(pushInfo)) return;
+                        if (IsMergeFromAutomerge(pushInfo, repoContext, out var parents))
+                        {
+                            DeleteRedundantBranches(parents, repoContext);
+                        }
                         if (IsPushedToIgnoredBranch(pushInfo)) return;
                         if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
                         if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
@@ -89,6 +93,26 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
             _logger.LogInformation("Processing dismissed. Only push adding new commits is accepted. Force pushes / tags pushes etc. are rejected.");
             return false;
+        }
+
+        private bool IsMergeFromAutomerge(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext,out BranchName[] parents)
+        {
+            var _parents = repoContext.GetCommitParents(pushInfo.HeadCommitSha);
+            parents = _parents;
+            return _parents != null;
+        }
+
+        private void DeleteRedundantBranches(BranchName[] branches, IRepositoryConnectionContext repoContext)
+        {
+            foreach(var branch in branches)
+            {
+                if (branch.Name.StartsWith(_cfg.CreatedBranchesPrefix))
+                {
+                    var branchName = branch.Name;
+                    _logger.LogInformation("Branch {branchName} was marked as redundant. Removing branch from repository", branchName);
+                    repoContext.RemoveBranch(branch);
+                }
+            }
         }
 
         private bool IsPushedToIgnoredBranch(PushInfoModel pushInfo)

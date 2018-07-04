@@ -22,5 +22,6 @@ namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
         void AssignUsersToPullRequest(int pullRequestNumber, string[] userNames);
         string GetCommitMessage(string pushInfoHeadCommitSha);
         void AddPullRequestComment(int pullRequestNumber, string comment);
+        BranchName[] GetCommitParents(string pushInfoHeadCommitSha);
     }
 }
