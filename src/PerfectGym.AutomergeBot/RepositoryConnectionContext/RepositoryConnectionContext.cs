@@ -126,20 +126,30 @@ namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
             CreateGitHubClient().Issue.Comment.Create(_repositoryOwner, _repositoryName, pullRequestNumber, comment).Wait();
         }
 
-        public BranchName[] GetCommitParents(string pushInfoHeadCommitSha)
+        public System.Collections.Generic.List<BranchName> GetBranchesForMergeCommit(string pushInfoHeadCommitSha)
         {
-            _logger.LogDebug($"Getting parents for commit {pushInfoHeadCommitSha}");
-            var headCommit = CreateGitHubClient().Git.Commit.Get(_repositoryOwner, _repositoryName, pushInfoHeadCommitSha).Result;
-            if (headCommit.Parents.Count < 2) return null;
-            var branches = CreateGitHubClient().Repository.Branch.GetAll(_repositoryOwner, _repositoryName).Result;
-            var parents = new BranchName[headCommit.Parents.Count - 1];
-            for (int i = 1; i < headCommit.Parents.Count; i++)
+            _logger.LogDebug("Getting branches for commit {pushInfoCommitSha}");
+            var parents = GetCommitParents(pushInfoHeadCommitSha);
+            var allBranches = CreateGitHubClient().Repository.Branch.GetAll(_repositoryOwner, _repositoryName).Result;
+            var branches = new System.Collections.Generic.List<BranchName>();
+            foreach(var commit in parents)
             {
-                var parent = branches.First(branch => branch.Commit.Sha == headCommit.Parents[i].Sha && branch.Commit.Sha != pushInfoHeadCommitSha);
-                parents[i - 1] = new BranchName(parent.Name);
+                var parentBranch = allBranches.FirstOrDefault(branch => branch.Commit.Sha == commit.Sha && branch.Commit.Sha != pushInfoHeadCommitSha);
+                if (parentBranch != null)
+                {
+                    branches.Add(new BranchName(parentBranch.Name));
+                }
             }
-            return parents;
+            return branches;
         }
+
+        private System.Collections.Generic.IReadOnlyList<GitReference> GetCommitParents(string pushInfoHeadCommitSha)
+        {
+            _logger.LogDebug("Getting parents for commit {pushInfoHeadCommitSha}", pushInfoHeadCommitSha);
+            var headCommit = CreateGitHubClient().Git.Commit.Get(_repositoryOwner, _repositoryName, pushInfoHeadCommitSha).Result;
+            return headCommit.Parents;
+        }
+
 
         /// <summary>
         /// Removes "refs/" prefix from git ref string.

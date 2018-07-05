@@ -41,11 +41,11 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                     {
                         if (!IsMonitoredRepository(pushInfo, repoContext)) return;
                         if (!IsPushAddingNewCommits(pushInfo)) return;
-                        if (IsMergeFromAutomerge(pushInfo, repoContext, out var parents))
+                        if (IsPushedToIgnoredBranch(pushInfo)) return;
+                        if (IsContainingRedundantBranches(pushInfo, repoContext, out var parents))
                         {
                             DeleteRedundantBranches(parents, repoContext);
                         }
-                        if (IsPushedToIgnoredBranch(pushInfo)) return;
                         if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
                         if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
 
@@ -95,14 +95,14 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             return false;
         }
 
-        private bool IsMergeFromAutomerge(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext,out BranchName[] parents)
+        private bool IsContainingRedundantBranches(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext,out List<BranchName> parents)
         {
-            var _parents = repoContext.GetCommitParents(pushInfo.HeadCommitSha);
+            var _parents = repoContext.GetBranchesForMergeCommit(pushInfo.HeadCommitSha);
             parents = _parents;
-            return _parents != null;
+            return _parents.Count != 0;
         }
 
-        private void DeleteRedundantBranches(BranchName[] branches, IRepositoryConnectionContext repoContext)
+        private void DeleteRedundantBranches(List<BranchName> branches, IRepositoryConnectionContext repoContext)
         {
             foreach(var branch in branches)
             {
