@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using PerfectGym.AutomergeBot.Models;
 using Microsoft.Extensions.Logging;
@@ -126,26 +127,30 @@ namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
             CreateGitHubClient().Issue.Comment.Create(_repositoryOwner, _repositoryName, pullRequestNumber, comment).Wait();
         }
 
-        public System.Collections.Generic.List<BranchName> GetBranchesForMergeCommit(string pushInfoHeadCommitSha)
+        public List<BranchName> GetMergedTempBranches(string mergeCommitSha, string tempBranchesPrefix)
         {
-            _logger.LogDebug("Getting branches for commit {pushInfoCommitSha}");
-            var parents = GetCommitParents(pushInfoHeadCommitSha);
-            var allBranches = CreateGitHubClient().Repository.Branch.GetAll(_repositoryOwner, _repositoryName).Result;
-            var branches = new System.Collections.Generic.List<BranchName>();
-            foreach(var commit in parents)
-            {
-                var parentBranch = allBranches.FirstOrDefault(branch => branch.Commit.Sha == commit.Sha && branch.Commit.Sha != pushInfoHeadCommitSha);
-                if (parentBranch != null)
-                {
-                    branches.Add(new BranchName(parentBranch.Name));
-                }
-            }
-            return branches;
+            _logger.LogDebug("Getting temp merged branches by merge commit {mergeCommitSha}", mergeCommitSha);
+
+            var allBranchesFromRepo = CreateGitHubClient().Repository.Branch.GetAll(_repositoryOwner, _repositoryName).Result;
+
+            var branchNames = GetCommitParents(mergeCommitSha)
+                .Select(commit => FindBranchNameForCommit(allBranchesFromRepo, commit))
+                .Where(branch => branch != null)
+                .Where(branch=> branch.Name.StartsWith(tempBranchesPrefix))
+                .Select(branch => new BranchName(branch.Name))
+                .ToList();
+
+            return branchNames;
         }
 
-        private System.Collections.Generic.IReadOnlyList<GitReference> GetCommitParents(string pushInfoHeadCommitSha)
+        private static Branch FindBranchNameForCommit(IEnumerable<Branch> allBranchesFromRepo, GitReference commit)
         {
-            _logger.LogDebug("Getting parents for commit {pushInfoHeadCommitSha}", pushInfoHeadCommitSha);
+            return allBranchesFromRepo.FirstOrDefault(branch => branch.Commit.Sha == commit.Sha );
+        }
+
+        private IEnumerable<GitReference> GetCommitParents(string pushInfoHeadCommitSha)
+        {
+            _logger.LogDebug("Getting parents for commit {mergeCommitSha}", pushInfoHeadCommitSha);
             var headCommit = CreateGitHubClient().Git.Commit.Get(_repositoryOwner, _repositoryName, pushInfoHeadCommitSha).Result;
             return headCommit.Parents;
         }

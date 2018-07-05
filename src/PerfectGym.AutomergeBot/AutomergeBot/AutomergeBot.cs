@@ -42,9 +42,9 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                         if (!IsMonitoredRepository(pushInfo, repoContext)) return;
                         if (!IsPushAddingNewCommits(pushInfo)) return;
                         if (IsPushedToIgnoredBranch(pushInfo)) return;
-                        if (IsContainingRedundantBranches(pushInfo, repoContext, out var parents))
+                        if (IsContainingTempBranches(pushInfo, repoContext, out var branches))
                         {
-                            DeleteRedundantBranches(parents, repoContext);
+                            DeleteBranches(branches, repoContext);
                         }
                         if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
                         if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
@@ -95,23 +95,18 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             return false;
         }
 
-        private bool IsContainingRedundantBranches(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext,out List<BranchName> parents)
+        private bool IsContainingTempBranches(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext,out List<BranchName> tempBranches)
         {
-            var _parents = repoContext.GetBranchesForMergeCommit(pushInfo.HeadCommitSha);
-            parents = _parents;
-            return _parents.Count != 0;
+            tempBranches = repoContext.GetMergedTempBranches(pushInfo.HeadCommitSha, _cfg.CreatedBranchesPrefix);
+            return tempBranches.Count != 0;
         }
 
-        private void DeleteRedundantBranches(List<BranchName> branches, IRepositoryConnectionContext repoContext)
+        private void DeleteBranches(IEnumerable<BranchName> branches, IRepositoryConnectionContext repoContext)
         {
-            foreach(var branch in branches)
+            foreach (var branch in branches)
             {
-                if (branch.Name.StartsWith(_cfg.CreatedBranchesPrefix))
-                {
-                    var branchName = branch.Name;
-                    _logger.LogInformation("Branch {branchName} was marked as redundant. Removing branch from repository", branchName);
-                    repoContext.RemoveBranch(branch);
-                }
+                _logger.LogDebug("Removing temporary {branchName} branch from repository as it is no longer used", branch.Name);
+                repoContext.RemoveBranch(branch);
             }
         }
 
