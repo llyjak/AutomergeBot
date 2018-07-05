@@ -42,6 +42,10 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                         if (!IsMonitoredRepository(pushInfo, repoContext)) return;
                         if (!IsPushAddingNewCommits(pushInfo)) return;
                         if (IsPushedToIgnoredBranch(pushInfo)) return;
+                        if (IsContainingTempBranches(pushInfo, repoContext, out var branches))
+                        {
+                            DeleteBranches(branches, repoContext);
+                        }
                         if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
                         if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
 
@@ -89,6 +93,21 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
             _logger.LogInformation("Processing dismissed. Only push adding new commits is accepted. Force pushes / tags pushes etc. are rejected.");
             return false;
+        }
+
+        private bool IsContainingTempBranches(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext,out List<BranchName> tempBranches)
+        {
+            tempBranches = repoContext.GetMergedTempBranches(pushInfo.HeadCommitSha, _cfg.CreatedBranchesPrefix);
+            return tempBranches.Count != 0;
+        }
+
+        private void DeleteBranches(IEnumerable<BranchName> branches, IRepositoryConnectionContext repoContext)
+        {
+            foreach (var branch in branches)
+            {
+                _logger.LogDebug("Removing temporary {branchName} branch from repository as it is no longer used", branch.Name);
+                repoContext.RemoveBranch(branch);
+            }
         }
 
         private bool IsPushedToIgnoredBranch(PushInfoModel pushInfo)

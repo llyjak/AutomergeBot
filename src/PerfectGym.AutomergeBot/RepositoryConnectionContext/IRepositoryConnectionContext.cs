@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using PerfectGym.AutomergeBot.Models;
 using Octokit;
 
@@ -22,5 +23,6 @@ namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
         void AssignUsersToPullRequest(int pullRequestNumber, string[] userNames);
         string GetCommitMessage(string pushInfoHeadCommitSha);
         void AddPullRequestComment(int pullRequestNumber, string comment);
+        List<BranchName> GetMergedTempBranches(string mergeCommitSha, string tempBranchesPrefix);
     }
 }

@@ -45,9 +45,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                           + $"5. Push changes to {destinationBranch}\r\n"
                           + "   ```\r\n"
                           + $"   git push origin {destinationBranch}\r\n"
-                          + "   ```\r\n"
-                          + $"6. Delete [pull request's]({pullRequestUrl}) source branch\r\n"
-                          + "   Click 'Delete branch' button \r\n";
+                          + "   ```\r\n";
 
             repoContext.AddPullRequestComment(pullRequestNumber, comment);
             repoContext.AddReviewerToPullRequest(pullRequestNumber, new[] { gitHubUserName });
