@@ -127,26 +127,26 @@ namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
             CreateGitHubClient().Issue.Comment.Create(_repositoryOwner, _repositoryName, pullRequestNumber, comment).Wait();
         }
 
-        public List<BranchName> GetMergedTempBranches(string mergeCommitSha, string tempBranchesPrefix)
+        public List<BranchName> GetMergedTempBranches(string mergeCommitSha, string tempBranchesPrefix,BranchName targetBranchName)
         {
             _logger.LogDebug("Getting temp merged branches by merge commit {mergeCommitSha}", mergeCommitSha);
 
             var allBranchesFromRepo = CreateGitHubClient().Repository.Branch.GetAll(_repositoryOwner, _repositoryName).Result;
 
-            var branchNames = GetCommitParents(mergeCommitSha)
-                .Select(commit => FindBranchNameForCommit(allBranchesFromRepo, commit))
-                .Where(branch => branch != null)
-                .Where(branch=> branch.Name.StartsWith(tempBranchesPrefix))
-                .Select(branch => new BranchName(branch.Name))
-                .ToList();
-
-            return branchNames;
+            var mergedFromCommit = GetCommitParents(mergeCommitSha).ElementAtOrDefault(1);
+            if (mergedFromCommit == null) return null;
+            var automergeBotBranch = allBranchesFromRepo
+                .Where(branch => branch.Commit.Sha == mergedFromCommit.Sha)
+                .SingleOrDefault(br => br.Name.StartsWith(tempBranchesPrefix));
+            return automergeBotBranch == null ? null : new List<BranchName> {new BranchName(automergeBotBranch.Name)};
         }
 
-        private static Branch FindBranchNameForCommit(IEnumerable<Branch> allBranchesFromRepo, GitReference commit)
+        public bool IsTargetBranch(BranchName branchName, (string from, string to)[] cfgMergeDirectionsParsed)
         {
-            return allBranchesFromRepo.FirstOrDefault(branch => branch.Commit.Sha == commit.Sha );
+            return cfgMergeDirectionsParsed
+                .Any(direction => direction.to.Equals(branchName.Name));
         }
+
 
         private IEnumerable<GitReference> GetCommitParents(string pushInfoHeadCommitSha)
         {

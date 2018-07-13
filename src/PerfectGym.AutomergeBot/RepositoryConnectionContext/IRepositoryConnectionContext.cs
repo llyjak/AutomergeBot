@@ -23,6 +23,7 @@ namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
         void AssignUsersToPullRequest(int pullRequestNumber, string[] userNames);
         string GetCommitMessage(string pushInfoHeadCommitSha);
         void AddPullRequestComment(int pullRequestNumber, string comment);
-        List<BranchName> GetMergedTempBranches(string mergeCommitSha, string tempBranchesPrefix);
+        List<BranchName> GetMergedTempBranches(string mergeCommitSha, string tempBranchesPrefix,BranchName targetBranchName);
+        bool IsTargetBranch(BranchName branchName, (string from, string to)[] cfgMergeDirectionsParsed);
     }
 }

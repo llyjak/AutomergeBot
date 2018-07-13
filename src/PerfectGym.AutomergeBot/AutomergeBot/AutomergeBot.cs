@@ -42,7 +42,8 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                         if (!IsMonitoredRepository(pushInfo, repoContext)) return;
                         if (!IsPushAddingNewCommits(pushInfo)) return;
                         if (IsPushedToIgnoredBranch(pushInfo)) return;
-                        if (IsContainingTempBranches(pushInfo, repoContext, out var branches))
+                        if (IsContainingTempBranches(pushInfo, repoContext, out var branches) &&
+                            IsPushedToTargetBranch(pushInfo, repoContext))
                         {
                             DeleteBranches(branches, repoContext);
                         }
@@ -97,15 +98,22 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
         private bool IsContainingTempBranches(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext,out List<BranchName> tempBranches)
         {
-            tempBranches = repoContext.GetMergedTempBranches(pushInfo.HeadCommitSha, _cfg.CreatedBranchesPrefix);
-            return tempBranches.Count != 0;
+            tempBranches = repoContext.GetMergedTempBranches(pushInfo.HeadCommitSha, _cfg.CreatedBranchesPrefix,pushInfo.GetPushedBranchName());
+            return tempBranches != null;
+        }
+
+        private bool IsPushedToTargetBranch(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext)
+        {
+            var branchName = pushInfo.GetPushedBranchName();
+            return repoContext.IsTargetBranch(branchName,_cfg.MergeDirectionsParsed);
         }
 
         private void DeleteBranches(IEnumerable<BranchName> branches, IRepositoryConnectionContext repoContext)
         {
             foreach (var branch in branches)
             {
-                _logger.LogDebug("Removing temporary {branchName} branch from repository as it is no longer used", branch.Name);
+                //TODO change to LogDebug
+                _logger.LogInformation("Removing temporary {branchName} branch from repository as it is no longer used", branch.Name);
                 repoContext.RemoveBranch(branch);
             }
         }
