@@ -127,28 +127,15 @@ namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
             CreateGitHubClient().Issue.Comment.Create(_repositoryOwner, _repositoryName, pullRequestNumber, comment).Wait();
         }
 
-        public List<BranchName> GetMergedTempBranches(string mergeCommitSha, string tempBranchesPrefix,BranchName targetBranchName)
+
+        public IReadOnlyList<Branch> GetAllBranches()
         {
-            _logger.LogDebug("Getting temp merged branches by merge commit {mergeCommitSha}", mergeCommitSha);
-
-            var allBranchesFromRepo = CreateGitHubClient().Repository.Branch.GetAll(_repositoryOwner, _repositoryName).Result;
-
-            var mergedFromCommit = GetCommitParents(mergeCommitSha).ElementAtOrDefault(1);
-            if (mergedFromCommit == null) return null;
-            var automergeBotBranch = allBranchesFromRepo
-                .Where(branch => branch.Commit.Sha == mergedFromCommit.Sha)
-                .SingleOrDefault(br => br.Name.StartsWith(tempBranchesPrefix));
-            return automergeBotBranch == null ? null : new List<BranchName> {new BranchName(automergeBotBranch.Name)};
-        }
-
-        public bool IsTargetBranch(BranchName branchName, (string from, string to)[] cfgMergeDirectionsParsed)
-        {
-            return cfgMergeDirectionsParsed
-                .Any(direction => direction.to.Equals(branchName.Name));
+            _logger.LogDebug("Getting all branches from {_repositoryName}", _repositoryName);
+            return CreateGitHubClient().Repository.Branch.GetAll(_repositoryOwner, _repositoryName).Result;
         }
 
 
-        private IEnumerable<GitReference> GetCommitParents(string pushInfoHeadCommitSha)
+        public IEnumerable<GitReference> GetCommitParents(string pushInfoHeadCommitSha)
         {
             _logger.LogDebug("Getting parents for commit {mergeCommitSha}", pushInfoHeadCommitSha);
             var headCommit = CreateGitHubClient().Git.Commit.Get(_repositoryOwner, _repositoryName, pushInfoHeadCommitSha).Result;
