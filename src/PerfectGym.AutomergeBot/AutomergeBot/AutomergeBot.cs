@@ -34,18 +34,20 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             _logger.LogInformation("Started processing push notification {@pushNotificationContext}", pushInfo);
             try
             {
-                using (var repoContext =
-                    new RepositoryConnectionContext.RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
-                {
-                    if (!IsMonitoredRepository(pushInfo, repoContext)) return;
-                    if (!IsPushAddingNewCommits(pushInfo)) return;
-                    if (IsPushedToIgnoredBranch(pushInfo)) return;
-                        if (IsContainingTempBranches(pushInfo, repoContext, out var branches))
+
+                    using (var repoContext =
+                        new RepositoryConnectionContext.RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                    {
+                        if (!IsMonitoredRepository(pushInfo, repoContext)) return;
+                        if (!IsPushAddingNewCommits(pushInfo)) return;
+                        if (IsPushedToIgnoredBranch(pushInfo)) return;
+                        if (IsContainingTempBranches(pushInfo, repoContext, out var branches) &&
+                            IsPushedToOneOfTheTargetBranches(pushInfo))
                         {
                             DeleteBranches(branches, repoContext);
                         }
-                    if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
-                    if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
+                        if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
+                        if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
 
                     _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
                         destinationBranchNames.Length, destinationBranchNames);
@@ -94,8 +96,28 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
         private bool IsContainingTempBranches(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext,out List<BranchName> tempBranches)
         {
-            tempBranches = repoContext.GetMergedTempBranches(pushInfo.HeadCommitSha, _cfg.CreatedBranchesPrefix);
-            return tempBranches.Count != 0;
+            tempBranches = GetMergedTempBranchNameOrNull(pushInfo.HeadCommitSha,repoContext);
+            return tempBranches != null;
+        }
+
+        private List<BranchName> GetMergedTempBranchNameOrNull(string mergeCommitSha,IRepositoryConnectionContext repoContext)
+        {
+            _logger.LogDebug("Getting temp merged branches by merge commit {mergeCommitSha}", mergeCommitSha);
+
+            var allBranchesFromRepo = repoContext.GetAllBranches();
+
+            var mergedFromCommit = repoContext.GetCommitParents(mergeCommitSha).ElementAtOrDefault(1);
+            if (mergedFromCommit == null) return null;
+            var automergeBotBranch = allBranchesFromRepo
+                .Where(branch => branch.Commit.Sha == mergedFromCommit.Sha)
+                .SingleOrDefault(br => br.Name.StartsWith(_cfg.CreatedBranchesPrefix));
+            return automergeBotBranch == null ? null : new List<BranchName> { new BranchName(automergeBotBranch.Name) };
+        }
+
+        private bool IsPushedToOneOfTheTargetBranches(PushInfoModel pushInfo)
+        {
+            return _cfg.MergeDirectionsParsed
+                .Any(direction => direction.to.Equals(pushInfo.GetPushedBranchName().Name));
         }
 
         private void DeleteBranches(IEnumerable<BranchName> branches, IRepositoryConnectionContext repoContext)
