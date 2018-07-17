@@ -31,11 +31,10 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
         public void Handle(PushInfoModel pushInfo)
         {
-            using (_logger.BeginScope("{@pushNotificationContext}", pushInfo))
+            _logger.LogInformation("Started processing push notification {@pushNotificationContext}", pushInfo);
+            try
             {
-                _logger.LogInformation("Started processing push notification");
-                try
-                {
+
                     using (var repoContext =
                         new RepositoryConnectionContext.RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
                     {
@@ -50,26 +49,25 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                         if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
                         if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
 
-                        _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
-                            destinationBranchNames.Length, destinationBranchNames);
-                        foreach (var destinationBranchName in destinationBranchNames)
-                        {
-                            _mergePerformer.TryMergePushedChanges(pushInfo, destinationBranchName, repoContext);
-                        }
+                    _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
+                        destinationBranchNames.Length, destinationBranchNames);
+                    foreach (var destinationBranchName in destinationBranchNames)
+                    {
+                        _mergePerformer.TryMergePushedChanges(pushInfo, destinationBranchName, repoContext);
                     }
                 }
-                catch (AggregateException e)
-                {
-                    LogAggregateException(e);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Error during processing push notification", pushInfo);
-                }
-                finally
-                {
-                    _logger.LogInformation("Finished processing push notification");
-                }
+            }
+            catch (AggregateException e)
+            {
+                LogAggregateException(e);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error during processing push notification", pushInfo);
+            }
+            finally
+            {
+                _logger.LogInformation("Finished processing push notification");
             }
         }
 

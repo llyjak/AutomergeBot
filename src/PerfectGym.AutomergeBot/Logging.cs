@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -16,7 +17,17 @@ namespace PerfectGym.AutomergeBot
         {
             if (_loggingInitialized) return;
 
-            var serilogLogger = CreateSerilogLogger(logFilesBasePath);
+            var seqUrl = GetSeqUrlFromAppConfiguration();
+
+            Logger serilogLogger;
+            if (!string.IsNullOrWhiteSpace(seqUrl))
+            {
+                serilogLogger = CreateSerilogLoggerForSeq(seqUrl);
+            }
+            else
+            {
+                serilogLogger = CreateSerilogLogger(logFilesBasePath);
+            }
 
             lock (LockObject)
             {
@@ -27,24 +38,64 @@ namespace PerfectGym.AutomergeBot
             }
         }
 
+        private static string GetSeqUrlFromAppConfiguration()
+        {
+            var configurationRoot = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", true, true)
+                .Build();
+
+            var seqUrl = configurationRoot["SeqUrl"];
+            return seqUrl;
+        }
+
         public static Logger CreateSerilogLogger(string logFilesBasePath)
         {
             logFilesBasePath = logFilesBasePath ?? string.Empty;
-            return new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .WriteTo.Console(
-                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}\t{Properties:j}{NewLine}{Exception}",
-                    restrictedToMinimumLevel: LogEventLevel.Information)
-                .WriteTo.File(
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties}{NewLine}{Exception}",
-                    path: Path.Combine(logFilesBasePath, $"{nameof(AutomergeBot.AutomergeBot)}.log"),
-                    fileSizeLimitBytes: 10 * 1024 * 1024,
-                    rollOnFileSizeLimit: true,
-                    retainedFileCountLimit: 10)
-                .WriteTo.Logger(ConfigureEasyMonitoringFileLogger(logFilesBasePath))
-                .MinimumLevel.ControlledBy(LoggingLevelSwitch)
-                .Filter.ByExcluding(MicrosoftNotImportantLogsSelector)
-                .CreateLogger();
+            var conf = CreateBaseLoggerConfiguration();
+
+            EnableWriteToConsole(conf);
+            EnableWriteToFile(logFilesBasePath, conf);
+
+            conf.WriteTo.Logger(ConfigureEasyMonitoringFileLogger(logFilesBasePath));
+            return conf.CreateLogger();
+        }
+
+        public static Logger CreateSerilogLoggerForSeq(string seqUrl)
+        {
+            var conf = CreateBaseLoggerConfiguration();
+
+            EnableWriteToConsole(conf);
+            conf.WriteTo.Seq(seqUrl, compact: true);
+
+            return conf.CreateLogger();
+        }
+
+        private static LoggerConfiguration CreateBaseLoggerConfiguration()
+        {
+            var conf = new LoggerConfiguration();
+
+            conf.Enrich.FromLogContext();
+
+            conf.MinimumLevel.ControlledBy(LoggingLevelSwitch)
+                .Filter.ByExcluding(MicrosoftNotImportantLogsSelector);
+            return conf;
+        }
+
+        private static void EnableWriteToFile(string logFilesBasePath, LoggerConfiguration conf)
+        {
+            conf.WriteTo.File(
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties}{NewLine}{Exception}",
+                path: Path.Combine(logFilesBasePath, $"{nameof(AutomergeBot.AutomergeBot)}.log"),
+                fileSizeLimitBytes: 10 * 1024 * 1024,
+                rollOnFileSizeLimit: true,
+                retainedFileCountLimit: 10);
+        }
+
+        private static void EnableWriteToConsole(LoggerConfiguration conf)
+        {
+            conf.WriteTo.Console(
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}\t{Properties:j}{NewLine}{Exception}",
+                restrictedToMinimumLevel: LogEventLevel.Information);
         }
 
         private static Action<LoggerConfiguration> ConfigureEasyMonitoringFileLogger(string logFilesBasePath)
