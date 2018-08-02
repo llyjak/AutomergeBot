@@ -88,7 +88,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                 if (apiValidationException != null)
                 {
                     pullRequest = null;
-                    _logger.LogError("Could not create pull request. Error: {gitHubApiErrorMessage}", apiValidationException.FirstErrorMessageSafe());
+                    _logger.LogError("Could not create pull request. Error: {gitHubApiErrorMessage} {apiErrors}", apiValidationException.Message, apiValidationException.ApiError?.Errors);
                     return false;
                 }
 

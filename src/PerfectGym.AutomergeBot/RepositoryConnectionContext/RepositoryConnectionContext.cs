@@ -56,9 +56,10 @@ namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
             {
                 var ex = e.InnerExceptions.OfType<PullRequestNotMergeableException>().First();
 
-                _logger.LogDebug("Pull request {pullRequestNumber} has not been merged because it is not mergeable. GitHub error message: {gitHubMessage}",
+                _logger.LogDebug("Pull request {pullRequestNumber} has not been merged because it is not mergeable. GitHub error message: {gitHubErrorMessage} {apiErrors}",
                     pullRequestNumber,
-                    ex.ApiError.FirstErrorMessageSafe());
+                    ex.Message,
+                    ex.ApiError?.Errors);
                 return false;
             }
         }

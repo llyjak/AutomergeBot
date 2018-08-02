@@ -35,19 +35,19 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             try
             {
 
-                    using (var repoContext =
-                        new RepositoryConnectionContext.RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                using (var repoContext =
+                    new RepositoryConnectionContext.RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                {
+                    if (!IsMonitoredRepository(pushInfo, repoContext)) return;
+                    if (!IsPushAddingNewCommits(pushInfo)) return;
+                    if (IsPushedToIgnoredBranch(pushInfo)) return;
+                    if (IsContainingTempBranches(pushInfo, repoContext, out var branches) &&
+                        IsPushedToOneOfTheTargetBranches(pushInfo))
                     {
-                        if (!IsMonitoredRepository(pushInfo, repoContext)) return;
-                        if (!IsPushAddingNewCommits(pushInfo)) return;
-                        if (IsPushedToIgnoredBranch(pushInfo)) return;
-                        if (IsContainingTempBranches(pushInfo, repoContext, out var branches) &&
-                            IsPushedToOneOfTheTargetBranches(pushInfo))
-                        {
-                            DeleteBranches(branches, repoContext);
-                        }
-                        if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
-                        if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
+                        DeleteBranches(branches, repoContext);
+                    }
+                    if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
+                    if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
 
                     _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
                         destinationBranchNames.Length, destinationBranchNames);
@@ -94,13 +94,13 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             return false;
         }
 
-        private bool IsContainingTempBranches(PushInfoModel pushInfo,IRepositoryConnectionContext repoContext,out List<BranchName> tempBranches)
+        private bool IsContainingTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext, out List<BranchName> tempBranches)
         {
-            tempBranches = GetMergedTempBranchNameOrNull(pushInfo.HeadCommitSha,repoContext);
+            tempBranches = GetMergedTempBranchNameOrNull(pushInfo.HeadCommitSha, repoContext);
             return tempBranches != null;
         }
 
-        private List<BranchName> GetMergedTempBranchNameOrNull(string mergeCommitSha,IRepositoryConnectionContext repoContext)
+        private List<BranchName> GetMergedTempBranchNameOrNull(string mergeCommitSha, IRepositoryConnectionContext repoContext)
         {
             _logger.LogDebug("Getting temp merged branches by merge commit {mergeCommitSha}", mergeCommitSha);
 
@@ -182,8 +182,8 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             {
                 if (innerException is ApiException apiException)
                 {
-                    _logger.LogError(innerException, "Error during processing push notification. GitHub Api error details message: {gitHubErrorMessage}",
-                        apiException.ApiError.FirstErrorMessageSafe());
+                    _logger.LogError(innerException, "Error during processing push notification. GitHub Api error details message: {gitHubErrorMessage} {apiErrors}",
+                        apiException.Message, apiException.ApiError?.Errors);
                 }
                 else
                 {
