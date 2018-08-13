@@ -40,7 +40,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
             var changesOriginalAuthor = RetrieveChangesOriginalAuthorFromPush(pushInfo, repoContext, out var coAuthorString);
 
-            var title = $"Automerge {pushInfo.GetPushedBranchName()} @{pushInfo.HeadCommitSha.Substring(0, 8)} -> {destinationBranchName}";
+            var title = $"{Consts.AutomergeBotPullRequestTitlePrefix} {pushInfo.GetPushedBranchName()} @{pushInfo.HeadCommitSha.Substring(0, 8)} -> {destinationBranchName}";
             var body = $"Last change author: {changesOriginalAuthor}";
 
             if (!TryCreatePullRequest(branchForPullRequest, destinationBranchName, repoContext, title, body, out var pullRequest))

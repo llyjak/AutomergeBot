@@ -8,5 +8,6 @@
         public const string GitHubSignatureRequestHeaderName = "X-Hub-Signature";
         public const string GitHubDeliveryRequestHeaderName = "X-GitHub-Delivery";
         public const string RefsHeads = "refs/heads/";
+        public const string AutomergeBotPullRequestTitlePrefix = "Automerge";
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using PerfectGym.AutomergeBot.Models;
 
 namespace PerfectGym.AutomergeBot.AutomergeBot
 {
@@ -14,6 +15,8 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         public List<string> MergeDirections { get; set; }
         public List<string> AutomergeOnlyForAuthors { get; set; }
         public string AutomergeBotGitHubUserName { get; set; }
+        public PullRequestGovernorConfiguration PullRequestGovernorConfiguration { get; set; }
+
 
         public (string from, string to)[] MergeDirectionsParsed => ParseMergeDirections();
 

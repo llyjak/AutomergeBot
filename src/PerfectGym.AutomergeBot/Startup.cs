@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -11,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PerfectGym.AutomergeBot.AutomergeBot;
 using Serilog;
+using SlackClientStandard;
 
 namespace PerfectGym.AutomergeBot
 {
@@ -61,8 +64,18 @@ namespace PerfectGym.AutomergeBot
             RegisterConfigurationChangedHandler(app);
             LogConfigurationUsed(app.ApplicationServices, logger);
 
+            StartPullRequestsGovernor(app);
             app.Run(HandleRequest);
             logger.LogInformation("Started");
+        }
+
+        private static void StartPullRequestsGovernor(IApplicationBuilder app)
+        {
+            var slackLogger = app.ApplicationServices.GetRequiredService<ILogger<PullRequestsGovernor>>();
+            var cfg = app.ApplicationServices.GetRequiredService<IOptionsMonitor<AutomergeBotConfiguration>>();
+            var slackClientProvider = new SlackClientProvider();
+            var pullRequestGovernor = new PullRequestsGovernor(slackLogger, cfg, slackClientProvider);
+            pullRequestGovernor.StartNewWorker();
         }
 
         private void UpdateMergeDirectionsProviderConfiguration(IServiceProvider serviceProvider)
