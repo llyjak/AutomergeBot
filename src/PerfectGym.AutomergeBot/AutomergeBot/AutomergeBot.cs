@@ -44,7 +44,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                     if (IsContainingTempBranches(pushInfo, repoContext, out var branches) &&
                         IsPushedToOneOfTheTargetBranches(pushInfo))
                     {
-                        DeleteBranches(branches, repoContext);
+                        DeleteTempBranches(branches, repoContext);
                     }
                     if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
                     if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
@@ -120,12 +120,22 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                 .Any(direction => direction.to.Equals(pushInfo.GetPushedBranchName().Name));
         }
 
-        private void DeleteBranches(IEnumerable<BranchName> branches, IRepositoryConnectionContext repoContext)
+        private void DeleteTempBranches(IEnumerable<BranchName> branches, IRepositoryConnectionContext repoContext)
         {
             foreach (var branch in branches)
             {
                 _logger.LogDebug("Removing temporary {branchName} branch from repository as it is no longer used", branch.Name);
-                repoContext.RemoveBranch(branch);
+                try
+                {
+                    repoContext.RemoveBranch(branch);
+                }
+                catch (Exception)
+                {
+                    _logger.LogWarning(
+                        "Temporary branch '{branchName}' no longer exists in the repository. Presumably it has been deleted manually by user",
+                        branch.Name);
+                }
+                
             }
         }
 
