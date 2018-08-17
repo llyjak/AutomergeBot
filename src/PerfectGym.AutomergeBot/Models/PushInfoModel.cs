@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
+using Octokit;
 
 namespace PerfectGym.AutomergeBot.Models
 {
@@ -13,7 +15,8 @@ namespace PerfectGym.AutomergeBot.Models
             bool deleted,
             string headCommitCommitterUserName,
             string headCommitAuthorUserName,
-            string headCommitAuthorEmail)
+            string headCommitAuthorEmail,
+            List<string> commitsShas)
         {
             RepositoryId = repositoryId;
             Ref = @ref;
@@ -24,6 +27,7 @@ namespace PerfectGym.AutomergeBot.Models
             HeadCommitCommitterUserName = headCommitCommitterUserName;
             HeadCommitAuthorUserName = headCommitAuthorUserName;
             HeadCommitAuthorEmail = headCommitAuthorEmail;
+            CommitsShas = commitsShas;
         }
 
         public int RepositoryId { get; }
@@ -35,6 +39,7 @@ namespace PerfectGym.AutomergeBot.Models
         public string HeadCommitCommitterUserName { get; }
         public string HeadCommitAuthorUserName { get; }
         public string HeadCommitAuthorEmail { get; }
+        public List<string> CommitsShas { get; }
 
         public BranchName GetPushedBranchName()
         {
@@ -52,8 +57,26 @@ namespace PerfectGym.AutomergeBot.Models
                 pushPayload["deleted"].Value<bool>(),
                 SafeGet<string>(pushPayload, "head_commit.committer.username") ?? SafeGet<string>(pushPayload, "head_commit.committer.name"),
                 SafeGet<string>(pushPayload, "head_commit.author.username") ?? SafeGet<string>(pushPayload, "head_commit.author.name"),
-                SafeGet<string>(pushPayload, "head_commit.author.email")
+                SafeGet<string>(pushPayload, "head_commit.author.email"),
+                GetCommitsShas(pushPayload,"commits")
                 );
+        }
+
+        private static List<string> GetCommitsShas(JObject jObject, string path)
+        {
+            var shas = new List<string>();
+
+            if (jObject == null || !jObject.TryGetValue(path, out var commits)) return shas;
+            if (!(commits is JArray jArray)) return null;
+
+            foreach (var commit in jArray)
+            {
+                var token = commit as JObject;
+                var sha = SafeGet<string>(token, "id");
+                shas.Add(sha);
+            }
+
+            return shas;
         }
 
         private static TValue SafeGet<TValue>(JObject jObject, string path)

@@ -41,10 +41,12 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                     if (!IsMonitoredRepository(pushInfo, repoContext)) return;
                     if (!IsPushAddingNewCommits(pushInfo)) return;
                     if (IsPushedToIgnoredBranch(pushInfo)) return;
-                    if (IsContainingTempBranches(pushInfo, repoContext, out var branches) &&
+                    if (IsContainingTempBranches(pushInfo, repoContext, out var tempBranches) &&
                         IsPushedToOneOfTheTargetBranches(pushInfo))
                     {
-                        DeleteTempBranches(branches, repoContext);
+                        var branchesFilter = new BranchesFilter(repoContext.GetAllBranches(), _cfg);
+                        var branchesToDelete = branchesFilter.GetAllBranchesToDelete(pushInfo.CommitsShas);
+                        DeleteBranches(branchesToDelete.Union(tempBranches), repoContext);
                     }
                     if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
                     if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
