@@ -46,7 +46,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                     {
                         var branchesFilter = new BranchesFilter(repoContext.GetAllBranches(), _cfg);
                         var branchesToDelete = branchesFilter.GetAllBranchesToDelete(pushInfo.CommitsShas);
-                        DeleteBranches(branchesToDelete.Union(tempBranches), repoContext);
+                        DeleteTempBranches(branchesToDelete.Union(tempBranches), repoContext);
                     }
                     if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
                     if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
