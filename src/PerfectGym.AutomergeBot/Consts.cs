@@ -9,5 +9,6 @@
         public const string GitHubDeliveryRequestHeaderName = "X-GitHub-Delivery";
         public const string RefsHeads = "refs/heads/";
         public const string AutomergeBotPullRequestTitlePrefix = "Automerge";
+        public const string SuccessfulMergeComment = "Your changes have been successfully merged";
     }
 }

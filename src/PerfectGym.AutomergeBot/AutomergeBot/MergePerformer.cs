@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using PerfectGym.AutomergeBot.Models;
 using PerfectGym.AutomergeBot.RepositoryConnectionContext;
@@ -12,6 +13,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
     public interface IMergePerformer
     {
         void TryMergePushedChanges(PushInfoModel pushInfo, BranchName destinationBranchName, IRepositoryConnectionContext repoContext);
+        void TryMergeExistingPullRequest(PullRequest pullRequest,IRepositoryConnectionContext repoContext);
     }
 
     public class MergePerformer : IMergePerformer
@@ -49,7 +51,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                 return;
             }
 
-            var mergeCommitMessage = pullRequest.Title + "\r\n\r\n" + coAuthorString;
+            var mergeCommitMessage = CreateMergeCommitMessage(pullRequest, coAuthorString);
 
             if (repoContext.MergePullRequest(pullRequest.Number, mergeCommitMessage))
             {
@@ -68,6 +70,59 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                     destinationBranchName.Name,
                     pullRequest.HtmlUrl);
             }
+        }
+
+        public void TryMergeExistingPullRequest(
+            PullRequest pullRequest,
+            IRepositoryConnectionContext repoContext)
+        {
+            var coAuthorString = CreateCoAuthoredByMessageForExistingPullRequest(pullRequest);
+            var mergeCommitMessage = CreateMergeCommitMessage(pullRequest, coAuthorString);
+
+            if (repoContext.MergePullRequest(pullRequest.Number, mergeCommitMessage))
+            {
+                _logger.LogInformation(
+                    "Successfully merged pull request #{pullRequestNumber} into {branchName}",
+                    pullRequest.Number,
+                    pullRequest.Base.Ref);
+                
+                repoContext.AddPullRequestComment(pullRequest.Number, Consts.SuccessfulMergeComment);
+
+                
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Merging pull request #{pullRequestNumber} into {branchName} cannot be done automatically",
+                    pullRequest.Number,
+                    pullRequest.Base.Ref);
+            }
+        }
+
+        private static string CreateCoAuthoredByMessageForExistingPullRequest(PullRequest pullRequest)
+        {
+            var stringBuilder = new StringBuilder();
+            foreach (var author in pullRequest.Assignees)
+            {
+                stringBuilder.AppendLine($"Co-authored-by: {author.Login} <{author.Email ?? CreateGitHubNoReplyEmail(author)}>");
+            }
+
+            return stringBuilder.ToString();
+        }
+
+        private static string CreateCoAuthoredByMessageForNewPullRequest(PushInfoModel pushInfo)
+        {
+            return $"Co-authored-by: {pushInfo.HeadCommitAuthorUserName} <{pushInfo.HeadCommitAuthorEmail}>";
+        }
+
+        private static string CreateMergeCommitMessage(PullRequest pullRequest, string coAuthorString)
+        {
+            return $"{pullRequest.Title}\r\n\r\n{coAuthorString}";
+        }
+        
+        private static string CreateGitHubNoReplyEmail(Account user)
+        {
+            return $"{user.Id}+{user.Login}@users.noreply.github.com";
         }
 
         private bool TryCreatePullRequest(BranchName sourceBranch,
@@ -119,7 +174,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                     "Merge commit will be missing original author of the changes.", _cfg.AutomergeBotGitHubUserName);
             }
 
-            coAuthorString = $"Co-authored-by: {pushInfo.HeadCommitAuthorUserName} <{pushInfo.HeadCommitAuthorEmail}>";
+            coAuthorString = CreateCoAuthoredByMessageForNewPullRequest(pushInfo);
             return pushInfo.HeadCommitAuthorUserName;
         }
 

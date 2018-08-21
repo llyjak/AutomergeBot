@@ -57,6 +57,15 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                     {
                         _mergePerformer.TryMergePushedChanges(pushInfo, destinationBranchName, repoContext);
                     }
+
+                    var openPullRequestsTargetingBranch = GetOpenPullRequestsTargetingBranch(pushInfo, repoContext);
+                    if (openPullRequestsTargetingBranch.Any())
+                    {
+                        foreach (var pullRequest in openPullRequestsTargetingBranch)
+                        {
+                            _mergePerformer.TryMergeExistingPullRequest(pullRequest, repoContext);
+                        }
+                    }
                 }
             }
             catch (AggregateException e)
@@ -71,6 +80,17 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             {
                 _logger.LogInformation("Finished processing push notification");
             }
+        }
+
+        private List<PullRequest> GetOpenPullRequestsTargetingBranch(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
+        {
+            var targetBranchName = pushInfo.GetPushedBranchName().Name;
+            var openPullRequestsTargetingBranch = repoContext
+                .GetOpenPullRequests()
+                .Where(pr => pr.Base.Ref == targetBranchName)
+                .Where(pr => pr.User.Login == _cfg.AutomergeBotGitHubUserName);
+
+            return openPullRequestsTargetingBranch.ToList();
         }
 
         private bool IsMonitoredRepository(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)

@@ -41,6 +41,7 @@ namespace PerfectGym.AutomergeBot
             services.AddTransient<IMergePerformer, MergePerformer>();
             services.AddTransient<IUserNotifier, UserNotifier>();
             services.AddTransient<IGitHubEventHttpRequestHandler, GitHubEventHttpRequestHandler>();
+            services.AddTransient<ISlackClientProvider, SlackClientProvider>();
 
             var mergeDirectionsProviderInstance = new MergeDirectionsProvider();
             services.AddSingleton<IMergeDirectionsProviderConfigurator>(mergeDirectionsProviderInstance);
