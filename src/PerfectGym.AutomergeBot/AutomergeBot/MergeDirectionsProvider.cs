@@ -21,7 +21,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
     {
         void Clear();
         MergeDirectionsProvider Add(string from, string to);
-        MergeDirectionsProvider AddMany(IEnumerable<(string from, string to)> mergeDirections);
+        MergeDirectionsProvider UpdateMergeDirections((string from, string to)[] mergeDirections);
     }
 
     public class MergeDirectionsProvider : IMergeDirectionsProvider, IMergeDirectionsProviderConfigurator
@@ -51,7 +51,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             _set.Add((@from, to));
         }
 
-        public MergeDirectionsProvider AddMany(IEnumerable<(string from, string to)> mergeDirections)
+        private MergeDirectionsProvider AddMany(IEnumerable<(string from, string to)> mergeDirections)
         {
             foreach (var mergeDirection in mergeDirections)
             {
@@ -59,6 +59,12 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             }
             EnsureThereIsNoCycle();
             return this;
+        }
+
+        public MergeDirectionsProvider UpdateMergeDirections((string from, string to)[] mergeDirections)
+        {
+            Clear();
+            return AddMany(mergeDirections);
         }
 
         private void EnsureThereIsNoCycle()

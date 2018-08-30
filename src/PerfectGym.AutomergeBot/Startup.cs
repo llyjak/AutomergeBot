@@ -83,8 +83,8 @@ namespace PerfectGym.AutomergeBot
         {
             var cfg = serviceProvider.GetRequiredService<IOptionsMonitor<AutomergeBotConfiguration>>().CurrentValue;
             var mergeDirectionsProviderConfigurator = serviceProvider.GetRequiredService<IMergeDirectionsProviderConfigurator>();
-
-            mergeDirectionsProviderConfigurator.AddMany(cfg.MergeDirectionsParsed);
+            
+            mergeDirectionsProviderConfigurator.UpdateMergeDirections(cfg.MergeDirectionsParsed);
         }
 
         private void RegisterConfigurationChangedHandler(IApplicationBuilder app)
