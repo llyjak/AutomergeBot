@@ -47,6 +47,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
             if (!TryCreatePullRequest(branchForPullRequest, destinationBranchName, repoContext, title, body, out var pullRequest))
             {
+                _logger.LogDebug("Removing temp branch {branchName} because the pull request has not been created", branchForPullRequest);
                 TryRemoveBranch(branchForPullRequest, repoContext);
                 return;
             }
