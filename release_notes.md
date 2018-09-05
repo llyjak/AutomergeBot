@@ -13,6 +13,13 @@
 ### VERSION 1.1.0 - 21st August 2018
 
 **Features**
-- automatic removal of temporary branches - upon closing pull request all temporary branches which are no longer needed are deleted from the remote repository
-- notification service integrated with Slack for pinging people who do not merge their pull requests for a long time
-- upon pushing new code to one of the monitored branches, automatic attempt to merge all pull requests targeting this branch, based on hope that newly added code resolved existing conflicts
+- automatic removal of all temporary branches which are no longer needed  
+  Upon closing pull request all temporary branches which are no longer needed are deleted from the remote repository.
+- slack notifications about conflicts waiting for resolve  
+  Notification service integrated with Slack for pinging people who do not merge their pull requests for a long time.
+- automatic retry merge pull requests   
+  Upon pushing new code to one of the monitored branches, automatic attempt to merge all pull requests targeting this branch, based on hope that newly added code resolved existing conflicts also for them.
+
+**Bugfixes**
+- reloading merging directions from configuration without restarting service
+- missing details for errors received from GitHub
