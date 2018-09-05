@@ -5,7 +5,6 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Octokit;
-using SlackClientStandard;
 
 namespace PerfectGym.AutomergeBot.AutomergeBot
 {
@@ -17,15 +16,15 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
     {
         private readonly AutomergeBotConfiguration _cfg;
         private readonly ILogger<PullRequestsGovernor> _logger;
-        private readonly ISlackClientProvider _clientProvider;
-
+        private readonly IUserNotifier _userNotifier;
+        
         public PullRequestsGovernor(
             ILogger<PullRequestsGovernor> logger,
-            IOptionsMonitor<AutomergeBotConfiguration> cfg,
-            ISlackClientProvider clientProvider)
+            IOptionsMonitor<AutomergeBotConfiguration> cfg, 
+            IUserNotifier userNotifier)
         {
             _logger = logger;
-            _clientProvider = clientProvider;
+            _userNotifier = userNotifier;
             _cfg = cfg.CurrentValue;
         }
 
@@ -56,37 +55,9 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
                 var filteredPullRequests = FilterPullRequests(openPullRequests);
 
-                foreach (var pullRequest in filteredPullRequests)
-                {
-                    NotifyAssignedUsersBySlack(pullRequest);
-                }
+                _userNotifier.NotifyAboutOpenPullRequests(filteredPullRequests);
             }
         }
-
-        private void NotifyAssignedUsersBySlack(PullRequest pullRequest)
-        {
-            var assignees = pullRequest.Assignees;
-            var pullRequestUrl = pullRequest.HtmlUrl;
-            using (var client = CreateSlackClient())
-            {
-                foreach (var assignee in assignees)
-                {
-                    var contact = assignee.Email ?? assignee.Login;
-                    client.NotifyUserAboutPendingPullRequest(
-                        contact,
-                        pullRequestUrl);
-                }
-            }
-        }
-
-        private ISlackClient CreateSlackClient()
-        {
-            return _clientProvider.CreateClient(
-                _cfg.PullRequestGovernorConfiguration.SlackToken,
-                _cfg.PullRequestGovernorConfiguration.SlackChannels,
-                _cfg.AutomergeBotGitHubUserName);
-        }
-
 
         private IEnumerable<PullRequest> FilterPullRequests(IReadOnlyList<PullRequest> openPullRequests)
         {

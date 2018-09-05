@@ -1,5 +1,8 @@
-﻿using PerfectGym.AutomergeBot.RepositoryConnectionContext;
+﻿using System.Collections.Generic;
+using PerfectGym.AutomergeBot.RepositoryConnectionContext;
 using Microsoft.Extensions.Logging;
+using Octokit;
+using PerfectGym.AutomergeBot.SlackClient;
 
 namespace PerfectGym.AutomergeBot.AutomergeBot
 {
@@ -10,16 +13,23 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             string gitHubUserName,
             IRepositoryConnectionContext repoContext,
             string pullRequestBranchName,
-            string destinationBranch, string pullRequestUrl);
+            string destinationBranch,
+            string pullRequestUrl);
+
+        void NotifyAboutOpenPullRequests(IEnumerable<PullRequest> filteredPullRequests);
     }
 
     public class UserNotifier : IUserNotifier
     {
         private readonly ILogger<UserNotifier> _logger;
+        private readonly SlackClientProvider _clientProvider;
 
-        public UserNotifier(ILogger<UserNotifier> logger)
+        public UserNotifier(
+            ILogger<UserNotifier> logger,
+            SlackClientProvider clientProvider)
         {
             _logger = logger;
+            _clientProvider = clientProvider;
         }
 
         public void NotifyUserAboutPullRequestWithUnresolvedConflicts(
@@ -50,6 +60,29 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             repoContext.AddPullRequestComment(pullRequestNumber, comment);
             repoContext.AddReviewerToPullRequest(pullRequestNumber, new[] { gitHubUserName });
             repoContext.AssignUsersToPullRequest(pullRequestNumber, new[] { gitHubUserName });
+        }
+
+        public void NotifyAboutOpenPullRequests(IEnumerable<PullRequest> filteredPullRequests)
+        {
+            using (var client = _clientProvider.Create())
+            {
+                foreach (var pullRequest in filteredPullRequests)
+                {
+                    NotifyAssignedUsersBySlack(pullRequest, client);
+                }
+            }
+        }
+
+        private static void NotifyAssignedUsersBySlack(PullRequest pullRequest, SlackClientStandard.ISlackClient client)
+        {
+            var assignees = pullRequest.Assignees;
+            var pullRequestUrl = pullRequest.HtmlUrl;
+
+            foreach (var assignee in assignees)
+            {
+                var contact = assignee.Email ?? assignee.Login;
+                client.NotifyUserAboutPendingPullRequest(contact, pullRequestUrl);
+            }
         }
     }
 }

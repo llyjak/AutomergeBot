@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace PerfectGym.AutomergeBot.Models
 {
-    public struct PullRequestGovernorConfiguration
+    public class PullRequestGovernorConfiguration
     {
         public string SlackToken { get; set; }
         public string SlackChannels { get; set; }

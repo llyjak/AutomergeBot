@@ -12,8 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PerfectGym.AutomergeBot.AutomergeBot;
+using PerfectGym.AutomergeBot.SlackClient;
 using Serilog;
-using SlackClientStandard;
 
 namespace PerfectGym.AutomergeBot
 {
@@ -41,7 +41,8 @@ namespace PerfectGym.AutomergeBot
             services.AddTransient<IMergePerformer, MergePerformer>();
             services.AddTransient<IUserNotifier, UserNotifier>();
             services.AddTransient<IGitHubEventHttpRequestHandler, GitHubEventHttpRequestHandler>();
-            services.AddTransient<ISlackClientProvider, SlackClientProvider>();
+            services.AddTransient<SlackClientProvider>();
+            services.AddTransient<PullRequestsGovernor>();
 
             var mergeDirectionsProviderInstance = new MergeDirectionsProvider();
             services.AddSingleton<IMergeDirectionsProviderConfigurator>(mergeDirectionsProviderInstance);
@@ -72,10 +73,7 @@ namespace PerfectGym.AutomergeBot
 
         private static void StartPullRequestsGovernor(IApplicationBuilder app)
         {
-            var slackLogger = app.ApplicationServices.GetRequiredService<ILogger<PullRequestsGovernor>>();
-            var cfg = app.ApplicationServices.GetRequiredService<IOptionsMonitor<AutomergeBotConfiguration>>();
-            var slackClientProvider = new SlackClientProvider();
-            var pullRequestGovernor = new PullRequestsGovernor(slackLogger, cfg, slackClientProvider);
+            var pullRequestGovernor = app.ApplicationServices.GetRequiredService<PullRequestsGovernor>();
             pullRequestGovernor.StartNewWorker();
         }
 
@@ -83,7 +81,7 @@ namespace PerfectGym.AutomergeBot
         {
             var cfg = serviceProvider.GetRequiredService<IOptionsMonitor<AutomergeBotConfiguration>>().CurrentValue;
             var mergeDirectionsProviderConfigurator = serviceProvider.GetRequiredService<IMergeDirectionsProviderConfigurator>();
-            
+
             mergeDirectionsProviderConfigurator.UpdateMergeDirections(cfg.MergeDirectionsParsed);
         }
 
