@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\submodules\SlackClientStandard\SlackClientStandard.csproj" />
+    <ProjectReference Include="..\submodules\SlackClientStandard\SlackClientStandard\SlackClientStandard.csproj" />
   </ItemGroup>
 
 </Project>

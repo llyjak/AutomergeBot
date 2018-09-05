@@ -1,3 +1,3 @@
-[submodule "src/submodules"]
-	path = src/submodules
-	url = https://github.com/PerfectGym/SlackClient
+[submodule "src/submodules/SlackClientStandard"]
+	path = src/submodules/SlackClientStandard
+	url = git@github.com:PerfectGym/SlackClient.git

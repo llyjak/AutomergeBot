@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PerfectGym.AutomergeBot.Win
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "submodules", "submodules", "{606995E4-90CD-4224-AFAE-ED6764559ACA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SlackClientStandard", "submodules\SlackClientStandard\SlackClientStandard.csproj", "{6CE60E03-79B4-433F-B933-A569FF2BC430}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SlackClientStandard", "submodules\SlackClientStandard\SlackClientStandard\SlackClientStandard.csproj", "{6CE60E03-79B4-433F-B933-A569FF2BC430}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
