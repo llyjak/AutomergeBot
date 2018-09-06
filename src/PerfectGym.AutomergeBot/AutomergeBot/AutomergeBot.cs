@@ -129,11 +129,16 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             var allBranchesFromRepo = repoContext.GetAllBranches();
 
             var mergedFromCommit = repoContext.GetCommitParents(mergeCommitSha).ElementAtOrDefault(1);
-            if (mergedFromCommit == null) return null;
-            var automergeBotBranch = allBranchesFromRepo
+            if (mergedFromCommit == null)
+            {
+                return null;
+            }
+            var automergeBotBranches = allBranchesFromRepo
                 .Where(branch => branch.Commit.Sha == mergedFromCommit.Sha)
-                .SingleOrDefault(br => br.Name.StartsWith(_cfg.CreatedBranchesPrefix));
-            return automergeBotBranch == null ? null : new List<BranchName> { new BranchName(automergeBotBranch.Name) };
+                .Where(br => br.Name.StartsWith(_cfg.CreatedBranchesPrefix))
+                .Select(br => new BranchName(br.Name))
+                .ToList();
+            return automergeBotBranches;
         }
 
         private bool IsPushedToOneOfTheTargetBranches(PushInfoModel pushInfo)
@@ -157,7 +162,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                         "Temporary branch '{branchName}' no longer exists in the repository. Presumably it has been deleted manually by user",
                         branch.Name);
                 }
-                
+
             }
         }
 
