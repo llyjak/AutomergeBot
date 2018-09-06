@@ -23,3 +23,10 @@
 **Bugfixes**
 - reloading merging directions from configuration without restarting service
 - missing details for errors received from GitHub
+
+
+### VERSION 1.1.1
+
+**Bugfixes**
+- getting more than 1 temporary branches when processing push notification
+
