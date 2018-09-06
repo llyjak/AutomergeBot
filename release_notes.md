@@ -1,6 +1,6 @@
 ## RELEASE NOTES
 
-### VERSION 1.0.0 - 30th May 2018
+### VERSION 1.0.0
 
 **Features**
 - automatic merging of branches according to provided merge directions
@@ -10,7 +10,7 @@
 - preserving original author of changes in newly created pull requests
 
 
-### VERSION 1.1.0 - 21st August 2018
+### VERSION 1.1.0
 
 **Features**
 - automatic removal of all temporary branches which are no longer needed  
