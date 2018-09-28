@@ -37,48 +37,90 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         public void Handle(PushInfoModel pushInfo)
         {
             _logger.LogInformation("Started processing push notification {@pushNotificationContext}", pushInfo);
+
             try
             {
-
-                using (var repoContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                if (!CanProcess(pushInfo))
                 {
-                    if (!_processPushPredicate.CanProcessPush(pushInfo, repoContext))
-                        return;
-
-                    _tempBranchesRemover.TryDeleteNoLongerNeededTempBranches(pushInfo, repoContext);
-
-                    TryDoMerges(pushInfo, repoContext);
-
-                    RetryMergePullRequestsCreatedBefore(pushInfo, repoContext);
+                    return;
                 }
-            }
-            catch (AggregateException e)
-            {
-                LogAggregateException(e);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error during processing push notification", pushInfo);
+
+                DoCriticalTasks(pushInfo);
+
+                DoNonCriticalTasks(pushInfo);
             }
             finally
             {
-                _logger.LogInformation("Finished processing push notification");
+                _logger.LogInformation("Finished processing push notification {@pushNotificationContext}", pushInfo);
+            }
+        }
+
+        private bool CanProcess(PushInfoModel pushInfo)
+        {
+            using (var repoContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+            {
+                if (!_processPushPredicate.CanProcessPush(pushInfo, repoContext))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void DoCriticalTasks(PushInfoModel pushInfo)
+        {
+            try
+            {
+                using (var repoContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                {
+                    TryDoMerges(pushInfo, repoContext);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogCritical(e, "Failed performing critical tasks when processing push notification");
             }
         }
 
         private void TryDoMerges(PushInfoModel pushInfo, RepositoryConnectionContext repoContext)
         {
             if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames))
+            {
                 return;
+            }
 
-            _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
+            _logger.LogInformation("Merging to {destinationBranchesCount} branches: {destinationBranchNames}",
                 destinationBranchNames.Length, destinationBranchNames);
 
             foreach (var destinationBranchName in destinationBranchNames)
             {
-                _mergePerformer.TryMergePushedChanges(pushInfo, destinationBranchName, repoContext);
+                try
+                {
+                    _mergePerformer.TryMergePushedChanges(pushInfo, destinationBranchName, repoContext);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogCritical(e, "Failed merging {commitSha} to {branchName}", pushInfo.HeadCommitSha, pushInfo.GetPushedBranchName());
+                }
             }
 
+        }
+
+        private void DoNonCriticalTasks(PushInfoModel pushInfo)
+        {
+            try
+            {
+                using (var repoContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                {
+                    _tempBranchesRemover.TryDeleteNoLongerNeededTempBranches(pushInfo, repoContext);
+                    RetryMergePullRequestsCreatedBefore(pushInfo, repoContext);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed performing non-critical tasks when processing push notification");
+            }
         }
 
         private void RetryMergePullRequestsCreatedBefore(PushInfoModel pushInfo, RepositoryConnectionContext repoContext)
