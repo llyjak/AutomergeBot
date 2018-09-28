@@ -13,7 +13,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
     public interface IMergePerformer
     {
         void TryMergePushedChanges(PushInfoModel pushInfo, BranchName destinationBranchName, IRepositoryConnectionContext repoContext);
-        void TryMergeExistingPullRequest(PullRequest pullRequest,IRepositoryConnectionContext repoContext);
+        void TryMergeExistingPullRequest(PullRequest pullRequest, IRepositoryConnectionContext repoContext);
     }
 
     public class MergePerformer : IMergePerformer
@@ -42,10 +42,8 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
             var changesOriginalAuthor = RetrieveChangesOriginalAuthorFromPush(pushInfo, repoContext, out var coAuthorString);
 
-            var title = $"{Consts.AutomergeBotPullRequestTitlePrefix} {pushInfo.GetPushedBranchName()} @{pushInfo.HeadCommitSha.Substring(0, 8)} -> {destinationBranchName}";
-            var body = $"Last change author: {changesOriginalAuthor}";
-
-            if (!TryCreatePullRequest(branchForPullRequest, destinationBranchName, repoContext, title, body, out var pullRequest))
+            var createPullRequestSucceeded = TryCreatePullRequest(branchForPullRequest, destinationBranchName, repoContext, out var pullRequest, pushInfo, changesOriginalAuthor);
+            if (!createPullRequestSucceeded)
             {
                 _logger.LogDebug("Removing temp branch {branchName} because the pull request has not been created", branchForPullRequest);
                 TryRemoveBranch(branchForPullRequest, repoContext);
@@ -86,10 +84,10 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                     "Successfully merged pull request #{pullRequestNumber} into {branchName}",
                     pullRequest.Number,
                     pullRequest.Base.Ref);
-                
+
                 repoContext.AddPullRequestComment(pullRequest.Number, Consts.SuccessfulMergeComment);
 
-                
+
             }
             else
             {
@@ -120,7 +118,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         {
             return $"{pullRequest.Title}\r\n\r\n{coAuthorString}";
         }
-        
+
         private static string CreateGitHubNoReplyEmail(Account user)
         {
             return $"{user.Id}+{user.Login}@users.noreply.github.com";
@@ -129,28 +127,26 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         private bool TryCreatePullRequest(BranchName sourceBranch,
             BranchName destinationBranchName,
             IRepositoryConnectionContext repoContext,
-            string title,
-            string body,
-            out PullRequest pullRequest)
+            out PullRequest pullRequest,
+            PushInfoModel pushInfo,
+            string changesOriginalAuthor)
         {
+            var title = $"{Consts.AutomergeBotPullRequestTitlePrefix} {pushInfo.GetPushedBranchName()} @{pushInfo.GetHeadCommitShaShort()} -> {destinationBranchName}";
+            var body = $"Last change author: {changesOriginalAuthor}";
+
             try
             {
                 pullRequest = repoContext.CreatePullRequest(sourceBranch, destinationBranchName, title, body);
                 return true;
             }
-            catch (AggregateException e) when (e.InnerExceptions.OfType<ApiValidationException>().Any())
+            catch (Exception e)
             {
-                var apiValidationException = e.InnerExceptions.OfType<ApiValidationException>().FirstOrDefault();
-                if (apiValidationException != null)
-                {
-                    pullRequest = null;
-                    _logger.LogError("Could not create pull request. Error: {gitHubApiErrorMessage} {apiErrors}", apiValidationException.Message, apiValidationException.ApiError?.Errors);
-                    return false;
-                }
-
-                throw;
+                _logger.LogError(e, "Creating pull request failed.");
+                pullRequest = null;
+                return false;
             }
         }
+
 
         private string RetrieveChangesOriginalAuthorFromPush(
             PushInfoModel pushInfo,

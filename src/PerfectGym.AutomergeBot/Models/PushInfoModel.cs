@@ -46,6 +46,11 @@ namespace PerfectGym.AutomergeBot.Models
             return BranchName.CreateFromRef(Ref);
         }
 
+        public string GetHeadCommitShaShort()
+        {
+            return HeadCommitSha.Substring(0, 8);
+        }
+
         public static PushInfoModel CreateFromPayload(JObject pushPayload)
         {
             return new PushInfoModel(
@@ -58,7 +63,7 @@ namespace PerfectGym.AutomergeBot.Models
                 SafeGet<string>(pushPayload, "head_commit.committer.username") ?? SafeGet<string>(pushPayload, "head_commit.committer.name"),
                 SafeGet<string>(pushPayload, "head_commit.author.username") ?? SafeGet<string>(pushPayload, "head_commit.author.name"),
                 SafeGet<string>(pushPayload, "head_commit.author.email"),
-                GetCommitsShas(pushPayload,"commits")
+                GetCommitsShas(pushPayload, "commits")
                 );
         }
 
@@ -100,6 +105,5 @@ namespace PerfectGym.AutomergeBot.Models
 
             return lastJToken.Value<TValue>();
         }
-
     }
 }
