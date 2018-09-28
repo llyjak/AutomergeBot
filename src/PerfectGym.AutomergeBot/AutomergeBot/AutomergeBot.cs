@@ -15,16 +15,19 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         private readonly IMergeDirectionsProvider _mergeDirectionsProvider;
         private readonly AutomergeBotConfiguration _cfg;
         private readonly IMergePerformer _mergePerformer;
+        private readonly IProcessPushPredicate _processPushPredicate;
 
 
         public AutomergeBot(
             ILogger<AutomergeBot> logger,
             IMergeDirectionsProvider mergeDirectionsProvider,
             IMergePerformer mergePerformer,
-            IOptionsMonitor<AutomergeBotConfiguration> cfg)
+            IOptionsMonitor<AutomergeBotConfiguration> cfg,
+            IProcessPushPredicate processPushPredicate)
         {
             _logger = logger;
             _mergePerformer = mergePerformer;
+            _processPushPredicate = processPushPredicate;
             _mergeDirectionsProvider = mergeDirectionsProvider;
             _cfg = cfg.CurrentValue;
         }
@@ -35,11 +38,10 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             try
             {
 
-                using (var repoContext =new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                using (var repoContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
                 {
-                    if (!IsMonitoredRepository(pushInfo, repoContext)) return;
-                    if (!IsPushAddingNewCommits(pushInfo)) return;
-                    if (IsPushedToIgnoredBranch(pushInfo)) return;
+                    if (!_processPushPredicate.CanProcessPush(pushInfo, repoContext))
+                        return;
                     if (IsContainingTempBranches(pushInfo, repoContext, out var tempBranches) &&
                         IsPushedToOneOfTheTargetBranches(pushInfo))
                     {
@@ -92,29 +94,6 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             return openPullRequestsTargetingBranch.ToList();
         }
 
-        private bool IsMonitoredRepository(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
-        {
-            if (repoContext.IsMonitoredRepository(pushInfo.RepositoryId))
-            {
-                return true;
-            }
-
-            _logger.LogWarning("Processing dismissed. Push is not from monitored repository ({RepositoryOwner}/{RepositoryName})",
-                _cfg.RepositoryOwner, _cfg.RepositoryName);
-            return false;
-        }
-
-        private bool IsPushAddingNewCommits(PushInfoModel pushInfo)
-        {
-            if (!pushInfo.Deleted && !pushInfo.Forced && pushInfo.Ref.StartsWith(Consts.RefsHeads))
-            {
-                return true;
-            }
-
-            _logger.LogInformation("Processing dismissed. Only push adding new commits is accepted. Force pushes / tags pushes etc. are rejected.");
-            return false;
-        }
-
         private bool IsContainingTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext, out List<BranchName> tempBranches)
         {
             tempBranches = GetMergedTempBranchNameOrNull(pushInfo.HeadCommitSha, repoContext);
@@ -163,19 +142,6 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                 }
 
             }
-        }
-
-        private bool IsPushedToIgnoredBranch(PushInfoModel pushInfo)
-        {
-            var branchName = pushInfo.GetPushedBranchName();
-            if (branchName.Name.StartsWith(_cfg.CreatedBranchesPrefix))
-            {
-                _logger.LogDebug("Processing dismissed. Push is on branch {branchName} which is created by us", branchName);
-                return true;
-            }
-
-            return false;
-
         }
 
         private bool IsAutomergeEnabledForAuthorOfLastestCommit(PushInfoModel pushInfo)
