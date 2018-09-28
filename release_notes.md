@@ -32,5 +32,6 @@
   Critical is to create PR for newly pushed changes and merge it. Whereas non-critical is removing temp branches, retrying merge PR etc.
 
 **Bugfixes**
-
-- 
+- Removing temporare branches which are still needed.
+  When merging from A->B and A->C closing PR[A->B] caused removing temporary branch of PR[A->C]. It was because they both have temporary branches with the same commit.
+  Now: 1. closing PR removes only  its temporary branch, 2. pull_request event is handled for possible temp branches to remove.
