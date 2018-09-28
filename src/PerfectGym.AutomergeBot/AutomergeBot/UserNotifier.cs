@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using PerfectGym.AutomergeBot.RepositoryConnectionContext;
 using Microsoft.Extensions.Logging;
 using Octokit;
+using PerfectGym.AutomergeBot.RepositoryConnection;
 using PerfectGym.AutomergeBot.SlackClient;
 
 namespace PerfectGym.AutomergeBot.AutomergeBot

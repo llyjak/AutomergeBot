@@ -5,6 +5,7 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Octokit;
+using PerfectGym.AutomergeBot.RepositoryConnection;
 
 namespace PerfectGym.AutomergeBot.AutomergeBot
 {
@@ -45,7 +46,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
         private void CheckForPullRequestsAndNotifyUsers()
         {
-            using (var context = new RepositoryConnectionContext.RepositoryConnectionContext(
+            using (var context = new RepositoryConnectionContext(
                 _logger,
                 _cfg.RepositoryName,
                 _cfg.RepositoryOwner,

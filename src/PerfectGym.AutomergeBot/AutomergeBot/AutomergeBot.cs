@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using PerfectGym.AutomergeBot.Models;
-using PerfectGym.AutomergeBot.RepositoryConnectionContext;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Octokit;
+using PerfectGym.AutomergeBot.RepositoryConnection;
 
 namespace PerfectGym.AutomergeBot.AutomergeBot
 {
@@ -35,8 +35,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             try
             {
 
-                using (var repoContext =
-                    new RepositoryConnectionContext.RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                using (var repoContext =new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
                 {
                     if (!IsMonitoredRepository(pushInfo, repoContext)) return;
                     if (!IsPushAddingNewCommits(pushInfo)) return;

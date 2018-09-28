@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using PerfectGym.AutomergeBot.Models;
 using Microsoft.Extensions.Logging;
 using Octokit;
+using PerfectGym.AutomergeBot.Models;
 
-namespace PerfectGym.AutomergeBot.RepositoryConnectionContext
+namespace PerfectGym.AutomergeBot.RepositoryConnection
 {
     public class RepositoryConnectionContext : IRepositoryConnectionContext
     {
