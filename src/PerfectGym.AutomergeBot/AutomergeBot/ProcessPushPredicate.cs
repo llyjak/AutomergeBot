@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PerfectGym.AutomergeBot.Models;
 using PerfectGym.AutomergeBot.RepositoryConnection;
@@ -28,6 +30,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             if (!IsMonitoredRepository(pushInfo, repoContext)) return false;
             if (!IsPushAddingNewCommits(pushInfo)) return false;
             if (IsPushedToIgnoredBranch(pushInfo)) return false;
+            if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return false;
 
             return true;
         }
@@ -66,6 +69,24 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
             return false;
 
+        }
+
+        private bool IsAutomergeEnabledForAuthorOfLastestCommit(PushInfoModel pushInfo)
+        {
+            if (!(_cfg.AutomergeOnlyForAuthors ?? new List<string>()).Any())
+                return true;
+
+            var headCommitAuthor = pushInfo.HeadCommitAuthorUserName.Trim();
+
+            if (headCommitAuthor == _cfg.AutomergeBotGitHubUserName)
+                return true;
+
+            var enabledForAuthor = _cfg.AutomergeOnlyForAuthors.Any(x => x.Trim() == headCommitAuthor);
+            if (!enabledForAuthor)
+            {
+                _logger.LogWarning("Automerging is not enabled for commit author {commitAuthorUserName}", pushInfo.HeadCommitAuthorUserName);
+            }
+            return enabledForAuthor;
         }
     }
 }

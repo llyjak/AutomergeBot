@@ -44,11 +44,10 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                 {
                     if (!_processPushPredicate.CanProcessPush(pushInfo, repoContext))
                         return;
-
+                    
                     _tempBranchesRemover.TryDeleteNoLongerNeededTempBranches(pushInfo, repoContext);
 
                     if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
-                    if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
 
                     _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
                         destinationBranchNames.Length, destinationBranchNames);
@@ -92,23 +91,6 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             return openPullRequestsTargetingBranch.ToList();
         }
 
-        private bool IsAutomergeEnabledForAuthorOfLastestCommit(PushInfoModel pushInfo)
-        {
-            if (!(_cfg.AutomergeOnlyForAuthors ?? new List<string>()).Any())
-                return true;
-
-            var headCommitAuthor = pushInfo.HeadCommitAuthorUserName.Trim();
-
-            if (headCommitAuthor == _cfg.AutomergeBotGitHubUserName)
-                return true;
-
-            var enabledForAuthor = _cfg.AutomergeOnlyForAuthors.Any(x => x.Trim() == headCommitAuthor);
-            if (!enabledForAuthor)
-            {
-                _logger.LogWarning("Processing dismissed. Automerging is not enabled for commit author {commitAuthorUserName}", pushInfo.HeadCommitAuthorUserName);
-            }
-            return enabledForAuthor;
-        }
 
         private bool TryGetMergeDestinationBranches(BranchName branchName, out BranchName[] destinationBranchNames)
         {
