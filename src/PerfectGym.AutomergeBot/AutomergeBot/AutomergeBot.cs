@@ -141,20 +141,6 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
         }
 
-        private void LogAggregateException(AggregateException exception)
-        {
-            foreach (var innerException in exception.InnerExceptions)
-            {
-                if (innerException is ApiException apiException)
-                {
-                    _logger.LogError(innerException, "Error during processing push notification. GitHub Api error details message: {gitHubErrorMessage} {apiErrors}",
-                        apiException.Message, apiException.ApiError?.Errors);
-                }
-                else
-                {
-                    _logger.LogError(innerException, "Error during processing push notification");
-                }
-            }
-        }
+      
     }
 }

@@ -24,7 +24,8 @@ namespace PerfectGym.AutomergeBot.RepositoryConnection
 
         public IRepositoryConnectionContext GetRepositoryConnection()
         {
-            return new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken);
+            var repositoryConnectionContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken);
+            return new RepositoryConnectionContextExceptionHandlingWrapper(_logger, repositoryConnectionContext);
         }
     }
 }
