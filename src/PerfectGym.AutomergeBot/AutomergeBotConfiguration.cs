@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PerfectGym.AutomergeBot.Models;
 
-namespace PerfectGym.AutomergeBot.AutomergeBot
+namespace PerfectGym.AutomergeBot
 {
     public class AutomergeBotConfiguration
     {
