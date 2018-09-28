@@ -25,8 +25,12 @@
 - missing details for errors received from GitHub
 
 
-### VERSION 1.1.1
+### VERSION 1.???
+
+**Features**
+- Isolated critical functionality from non-critical. If non-critical fails it does not block critical successful execution.  
+  Critical is to create PR for newly pushed changes and merge it. Whereas non-critical is removing temp branches, retrying merge PR etc.
 
 **Bugfixes**
-- getting more than 1 temporary branches when processing push notification
 
+- 
