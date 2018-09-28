@@ -16,20 +16,22 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         private readonly AutomergeBotConfiguration _cfg;
         private readonly IMergePerformer _mergePerformer;
         private readonly IProcessPushPredicate _processPushPredicate;
+        private readonly ITempBranchesRemover _tempBranchesRemover;
 
 
-        public AutomergeBot(
-            ILogger<AutomergeBot> logger,
+        public AutomergeBot(ILogger<AutomergeBot> logger,
             IMergeDirectionsProvider mergeDirectionsProvider,
-            IMergePerformer mergePerformer,
             IOptionsMonitor<AutomergeBotConfiguration> cfg,
-            IProcessPushPredicate processPushPredicate)
+            IMergePerformer mergePerformer,
+            IProcessPushPredicate processPushPredicate, 
+            ITempBranchesRemover tempBranchesRemover)
         {
             _logger = logger;
-            _mergePerformer = mergePerformer;
-            _processPushPredicate = processPushPredicate;
             _mergeDirectionsProvider = mergeDirectionsProvider;
             _cfg = cfg.CurrentValue;
+            _mergePerformer = mergePerformer;
+            _processPushPredicate = processPushPredicate;
+            _tempBranchesRemover = tempBranchesRemover;
         }
 
         public void Handle(PushInfoModel pushInfo)
@@ -42,13 +44,9 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                 {
                     if (!_processPushPredicate.CanProcessPush(pushInfo, repoContext))
                         return;
-                    if (IsContainingTempBranches(pushInfo, repoContext, out var tempBranches) &&
-                        IsPushedToOneOfTheTargetBranches(pushInfo))
-                    {
-                        var branchesFilter = new BranchesFilter(repoContext.GetAllBranches(), _cfg);
-                        var branchesToDelete = branchesFilter.GetAllBranchesToDelete(pushInfo.CommitsShas);
-                        DeleteTempBranches(branchesToDelete.Union(tempBranches), repoContext);
-                    }
+
+                    _tempBranchesRemover.TryDeleteNoLongerNeededTempBranches(pushInfo, repoContext);
+
                     if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
                     if (!IsAutomergeEnabledForAuthorOfLastestCommit(pushInfo)) return;
 
@@ -92,56 +90,6 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                 .Where(pr => pr.User.Login == _cfg.AutomergeBotGitHubUserName);
 
             return openPullRequestsTargetingBranch.ToList();
-        }
-
-        private bool IsContainingTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext, out List<BranchName> tempBranches)
-        {
-            tempBranches = GetMergedTempBranchNameOrNull(pushInfo.HeadCommitSha, repoContext);
-            return tempBranches != null;
-        }
-
-        private List<BranchName> GetMergedTempBranchNameOrNull(string mergeCommitSha, IRepositoryConnectionContext repoContext)
-        {
-            _logger.LogDebug("Getting temp merged branches by merge commit {mergeCommitSha}", mergeCommitSha);
-
-            var allBranchesFromRepo = repoContext.GetAllBranches();
-
-            var mergedFromCommit = repoContext.GetCommitParents(mergeCommitSha).ElementAtOrDefault(1);
-            if (mergedFromCommit == null)
-            {
-                return null;
-            }
-            var automergeBotBranches = allBranchesFromRepo
-                .Where(branch => branch.Commit.Sha == mergedFromCommit.Sha)
-                .Where(br => br.Name.StartsWith(_cfg.CreatedBranchesPrefix))
-                .Select(br => new BranchName(br.Name))
-                .ToList();
-            return automergeBotBranches;
-        }
-
-        private bool IsPushedToOneOfTheTargetBranches(PushInfoModel pushInfo)
-        {
-            return _cfg.MergeDirectionsParsed
-                .Any(direction => direction.to.Equals(pushInfo.GetPushedBranchName().Name));
-        }
-
-        private void DeleteTempBranches(IEnumerable<BranchName> branches, IRepositoryConnectionContext repoContext)
-        {
-            foreach (var branch in branches)
-            {
-                _logger.LogDebug("Removing temporary {branchName} branch from repository as it is no longer used", branch.Name);
-                try
-                {
-                    repoContext.RemoveBranch(branch);
-                }
-                catch (Exception)
-                {
-                    _logger.LogWarning(
-                        "Temporary branch '{branchName}' no longer exists in the repository. Presumably it has been deleted manually by user",
-                        branch.Name);
-                }
-
-            }
         }
 
         private bool IsAutomergeEnabledForAuthorOfLastestCommit(PushInfoModel pushInfo)

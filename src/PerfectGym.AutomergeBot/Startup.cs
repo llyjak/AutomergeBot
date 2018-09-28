@@ -39,6 +39,7 @@ namespace PerfectGym.AutomergeBot
 
             services.AddTransient<AutomergeBot.AutomergeBot>();
             services.AddTransient<IProcessPushPredicate, ProcessPushPredicate>();
+            services.AddTransient<ITempBranchesRemover, TempBranchesRemover>();
             services.AddTransient<IMergePerformer, MergePerformer>();
             services.AddTransient<IUserNotifier, UserNotifier>();
             services.AddTransient<IGitHubEventHttpRequestHandler, GitHubEventHttpRequestHandler>();
