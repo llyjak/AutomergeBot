@@ -9,7 +9,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 {
     public interface IProcessPushPredicate
     {
-        bool CanProcessPush(PushInfoModel pushInfo, RepositoryConnectionContext repoContext);
+        bool CanProcessPush(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext);
     }
 
     public class ProcessPushPredicate : IProcessPushPredicate
@@ -25,7 +25,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             _cfg = cfg.CurrentValue;
         }
 
-        public bool CanProcessPush(PushInfoModel pushInfo, RepositoryConnectionContext repoContext)
+        public bool CanProcessPush(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
         {
             if (!IsMonitoredRepository(pushInfo, repoContext)) return false;
             if (!IsPushAddingNewCommits(pushInfo)) return false;

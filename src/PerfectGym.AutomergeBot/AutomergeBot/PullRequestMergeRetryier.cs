@@ -9,7 +9,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 {
     public interface IPullRequestMergeRetryier
     {
-        void RetryMergePullRequestsCreatedBefore(PushInfoModel pushInfo, RepositoryConnectionContext repoContext);
+        void RetryMergePullRequestsCreatedBefore(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext);
     }
 
     public class PullRequestMergeRetryier : IPullRequestMergeRetryier
@@ -25,7 +25,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             _mergePerformer = mergePerformer;
         }
 
-        public void RetryMergePullRequestsCreatedBefore(PushInfoModel pushInfo, RepositoryConnectionContext repoContext)
+        public void RetryMergePullRequestsCreatedBefore(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
         {
             var openPullRequestsTargetingBranch = GetOpenPullRequestsTargetingBranch(pushInfo, repoContext);
             if (Enumerable.Any<PullRequest>(openPullRequestsTargetingBranch))

@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PerfectGym.AutomergeBot.AutomergeBot;
+using PerfectGym.AutomergeBot.RepositoryConnection;
 using PerfectGym.AutomergeBot.SlackClient;
 using Serilog;
 
@@ -37,6 +38,7 @@ namespace PerfectGym.AutomergeBot
                 .AddSerilog(dispose: true));
             services.Configure<AutomergeBotConfiguration>(_configuration);
 
+            services.AddTransient<IRepositoryConnectionProvider, RepositoryConnectionProvider>();
             services.AddTransient<AutomergeBot.AutomergeBot>();
             services.AddTransient<IProcessPushPredicate, ProcessPushPredicate>();
             services.AddTransient<ITempBranchesRemover, TempBranchesRemover>();

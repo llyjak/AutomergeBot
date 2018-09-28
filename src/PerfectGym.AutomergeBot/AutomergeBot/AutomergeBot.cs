@@ -2,7 +2,6 @@
 using System.Linq;
 using PerfectGym.AutomergeBot.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Octokit;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 
@@ -12,20 +11,20 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
     {
         private readonly ILogger<AutomergeBot> _logger;
         private readonly IMergeDirectionsProvider _mergeDirectionsProvider;
-        private readonly AutomergeBotConfiguration _cfg;
         private readonly IMergePerformer _mergePerformer;
         private readonly IProcessPushPredicate _processPushPredicate;
         private readonly ITempBranchesRemover _tempBranchesRemover;
         private readonly IPullRequestMergeRetryier _pullRequestMergeRetryier;
+        private readonly IRepositoryConnectionProvider _repositoryConnectionProvider;
 
 
         public AutomergeBot(ILogger<AutomergeBot> logger,
             IMergeDirectionsProvider mergeDirectionsProvider,
-            IOptionsMonitor<AutomergeBotConfiguration> cfg,
             IMergePerformer mergePerformer,
             IProcessPushPredicate processPushPredicate,
-            ITempBranchesRemover tempBranchesRemover, 
-            IPullRequestMergeRetryier pullRequestMergeRetryier)
+            ITempBranchesRemover tempBranchesRemover,
+            IPullRequestMergeRetryier pullRequestMergeRetryier,
+            IRepositoryConnectionProvider repositoryConnectionProvider)
         {
             _logger = logger;
             _mergeDirectionsProvider = mergeDirectionsProvider;
@@ -33,6 +32,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             _processPushPredicate = processPushPredicate;
             _tempBranchesRemover = tempBranchesRemover;
             _pullRequestMergeRetryier = pullRequestMergeRetryier;
+            _repositoryConnectionProvider = repositoryConnectionProvider;
         }
 
         public void Handle(PushInfoModel pushInfo)
@@ -58,7 +58,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
         private bool CanProcess(PushInfoModel pushInfo)
         {
-            using (var repoContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+            using (var repoContext = _repositoryConnectionProvider.GetRepositoryConnection())
             {
                 if (!_processPushPredicate.CanProcessPush(pushInfo, repoContext))
                 {
@@ -73,7 +73,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         {
             try
             {
-                using (var repoContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                using (var repoContext = _repositoryConnectionProvider.GetRepositoryConnection())
                 {
                     TryDoMerges(pushInfo, repoContext);
                 }
@@ -84,7 +84,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             }
         }
 
-        private void TryDoMerges(PushInfoModel pushInfo, RepositoryConnectionContext repoContext)
+        private void TryDoMerges(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
         {
             if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames))
             {
@@ -112,7 +112,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         {
             try
             {
-                using (var repoContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
+                using (var repoContext = _repositoryConnectionProvider.GetRepositoryConnection())
                 {
                     _tempBranchesRemover.TryDeleteNoLongerNeededTempBranches(pushInfo, repoContext);
                     _pullRequestMergeRetryier.RetryMergePullRequestsCreatedBefore(pushInfo, repoContext);

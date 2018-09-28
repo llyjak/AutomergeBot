@@ -18,14 +18,17 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         private readonly AutomergeBotConfiguration _cfg;
         private readonly ILogger<PullRequestsGovernor> _logger;
         private readonly IUserNotifier _userNotifier;
+        private readonly IRepositoryConnectionProvider _repositoryConnectionProvider;
         
         public PullRequestsGovernor(
             ILogger<PullRequestsGovernor> logger,
             IOptionsMonitor<AutomergeBotConfiguration> cfg, 
-            IUserNotifier userNotifier)
+            IUserNotifier userNotifier, 
+            IRepositoryConnectionProvider repositoryConnectionProvider)
         {
             _logger = logger;
             _userNotifier = userNotifier;
+            _repositoryConnectionProvider = repositoryConnectionProvider;
             _cfg = cfg.CurrentValue;
         }
 
@@ -46,13 +49,9 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
         private void CheckForPullRequestsAndNotifyUsers()
         {
-            using (var context = new RepositoryConnectionContext(
-                _logger,
-                _cfg.RepositoryName,
-                _cfg.RepositoryOwner,
-                _cfg.AuthToken))
+            using (var repoContext = _repositoryConnectionProvider.GetRepositoryConnection())
             {
-                var openPullRequests = context.GetOpenPullRequests();
+                var openPullRequests = repoContext.GetOpenPullRequests();
 
                 var filteredPullRequests = FilterPullRequests(openPullRequests);
 

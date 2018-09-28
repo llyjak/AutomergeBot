@@ -10,7 +10,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 {
     public interface ITempBranchesRemover
     {
-        void TryDeleteNoLongerNeededTempBranches(PushInfoModel pushInfo, RepositoryConnectionContext repoContext);
+        void TryDeleteNoLongerNeededTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext);
     }
 
     public class TempBranchesRemover : ITempBranchesRemover
@@ -25,7 +25,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         }
 
 
-        public void TryDeleteNoLongerNeededTempBranches(PushInfoModel pushInfo, RepositoryConnectionContext repoContext)
+        public void TryDeleteNoLongerNeededTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
         {
             if (IsContainingTempBranches(pushInfo, repoContext, out var tempBranches) &&
                 IsPushedToOneOfTheTargetBranches(pushInfo))

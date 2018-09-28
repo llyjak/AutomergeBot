@@ -31,12 +31,6 @@ namespace PerfectGym.AutomergeBot.RepositoryConnection
             return client;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="pullRequestNumber"></param>
-        /// <param name="mergeCommitMessage"></param>
-        /// <returns><c>true</c> if successfully merged</returns>
         public bool MergePullRequest(int pullRequestNumber, string mergeCommitMessage)
         {
             try
