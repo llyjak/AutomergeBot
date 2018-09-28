@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using PerfectGym.AutomergeBot.Models;
 using Microsoft.Extensions.Logging;
@@ -17,6 +16,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         private readonly IMergePerformer _mergePerformer;
         private readonly IProcessPushPredicate _processPushPredicate;
         private readonly ITempBranchesRemover _tempBranchesRemover;
+        private readonly IPullRequestMergeRetryier _pullRequestMergeRetryier;
 
 
         public AutomergeBot(ILogger<AutomergeBot> logger,
@@ -24,14 +24,15 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             IOptionsMonitor<AutomergeBotConfiguration> cfg,
             IMergePerformer mergePerformer,
             IProcessPushPredicate processPushPredicate,
-            ITempBranchesRemover tempBranchesRemover)
+            ITempBranchesRemover tempBranchesRemover, 
+            IPullRequestMergeRetryier pullRequestMergeRetryier)
         {
             _logger = logger;
             _mergeDirectionsProvider = mergeDirectionsProvider;
-            _cfg = cfg.CurrentValue;
             _mergePerformer = mergePerformer;
             _processPushPredicate = processPushPredicate;
             _tempBranchesRemover = tempBranchesRemover;
+            _pullRequestMergeRetryier = pullRequestMergeRetryier;
         }
 
         public void Handle(PushInfoModel pushInfo)
@@ -114,36 +115,13 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                 using (var repoContext = new RepositoryConnectionContext(_logger, _cfg.RepositoryName, _cfg.RepositoryOwner, _cfg.AuthToken))
                 {
                     _tempBranchesRemover.TryDeleteNoLongerNeededTempBranches(pushInfo, repoContext);
-                    RetryMergePullRequestsCreatedBefore(pushInfo, repoContext);
+                    _pullRequestMergeRetryier.RetryMergePullRequestsCreatedBefore(pushInfo, repoContext);
                 }
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Failed performing non-critical tasks when processing push notification");
             }
-        }
-
-        private void RetryMergePullRequestsCreatedBefore(PushInfoModel pushInfo, RepositoryConnectionContext repoContext)
-        {
-            var openPullRequestsTargetingBranch = GetOpenPullRequestsTargetingBranch(pushInfo, repoContext);
-            if (openPullRequestsTargetingBranch.Any())
-            {
-                foreach (var pullRequest in openPullRequestsTargetingBranch)
-                {
-                    _mergePerformer.TryMergeExistingPullRequest(pullRequest, repoContext);
-                }
-            }
-        }
-
-        private List<PullRequest> GetOpenPullRequestsTargetingBranch(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
-        {
-            var targetBranchName = pushInfo.GetPushedBranchName().Name;
-            var openPullRequestsTargetingBranch = repoContext
-                .GetOpenPullRequests()
-                .Where(pr => pr.Base.Ref == targetBranchName)
-                .Where(pr => pr.User.Login == _cfg.AutomergeBotGitHubUserName);
-
-            return openPullRequestsTargetingBranch.ToList();
         }
 
 

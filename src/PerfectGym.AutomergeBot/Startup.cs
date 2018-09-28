@@ -41,6 +41,7 @@ namespace PerfectGym.AutomergeBot
             services.AddTransient<IProcessPushPredicate, ProcessPushPredicate>();
             services.AddTransient<ITempBranchesRemover, TempBranchesRemover>();
             services.AddTransient<IMergePerformer, MergePerformer>();
+            services.AddTransient<IPullRequestMergeRetryier, PullRequestMergeRetryier>();
             services.AddTransient<IUserNotifier, UserNotifier>();
             services.AddTransient<IGitHubEventHttpRequestHandler, GitHubEventHttpRequestHandler>();
             services.AddTransient<SlackClientProvider>();
