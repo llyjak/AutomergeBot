@@ -23,7 +23,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             IMergeDirectionsProvider mergeDirectionsProvider,
             IOptionsMonitor<AutomergeBotConfiguration> cfg,
             IMergePerformer mergePerformer,
-            IProcessPushPredicate processPushPredicate, 
+            IProcessPushPredicate processPushPredicate,
             ITempBranchesRemover tempBranchesRemover)
         {
             _logger = logger;
@@ -44,26 +44,12 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
                 {
                     if (!_processPushPredicate.CanProcessPush(pushInfo, repoContext))
                         return;
-                    
+
                     _tempBranchesRemover.TryDeleteNoLongerNeededTempBranches(pushInfo, repoContext);
 
-                    if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames)) return;
+                    TryDoMerges(pushInfo, repoContext);
 
-                    _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
-                        destinationBranchNames.Length, destinationBranchNames);
-                    foreach (var destinationBranchName in destinationBranchNames)
-                    {
-                        _mergePerformer.TryMergePushedChanges(pushInfo, destinationBranchName, repoContext);
-                    }
-
-                    var openPullRequestsTargetingBranch = GetOpenPullRequestsTargetingBranch(pushInfo, repoContext);
-                    if (openPullRequestsTargetingBranch.Any())
-                    {
-                        foreach (var pullRequest in openPullRequestsTargetingBranch)
-                        {
-                            _mergePerformer.TryMergeExistingPullRequest(pullRequest, repoContext);
-                        }
-                    }
+                    RetryMergePullRequestsCreatedBefore(pushInfo, repoContext);
                 }
             }
             catch (AggregateException e)
@@ -77,6 +63,33 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             finally
             {
                 _logger.LogInformation("Finished processing push notification");
+            }
+        }
+
+        private void TryDoMerges(PushInfoModel pushInfo, RepositoryConnectionContext repoContext)
+        {
+            if (!TryGetMergeDestinationBranches(pushInfo.GetPushedBranchName(), out var destinationBranchNames))
+                return;
+
+            _logger.LogInformation("Will perform merging to {destinationBranchesCount} branches: {destinationBranchNames}",
+                destinationBranchNames.Length, destinationBranchNames);
+
+            foreach (var destinationBranchName in destinationBranchNames)
+            {
+                _mergePerformer.TryMergePushedChanges(pushInfo, destinationBranchName, repoContext);
+            }
+
+        }
+
+        private void RetryMergePullRequestsCreatedBefore(PushInfoModel pushInfo, RepositoryConnectionContext repoContext)
+        {
+            var openPullRequestsTargetingBranch = GetOpenPullRequestsTargetingBranch(pushInfo, repoContext);
+            if (openPullRequestsTargetingBranch.Any())
+            {
+                foreach (var pullRequest in openPullRequestsTargetingBranch)
+                {
+                    _mergePerformer.TryMergeExistingPullRequest(pullRequest, repoContext);
+                }
             }
         }
 
