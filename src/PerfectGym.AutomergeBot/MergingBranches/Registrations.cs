@@ -10,10 +10,7 @@ namespace PerfectGym.AutomergeBot.MergingBranches
             services.AddTransient<IProcessPushPredicate, ProcessPushPredicate>();
             services.AddTransient<IMergePerformer, MergePerformer>();
             services.AddTransient<IPullRequestMergeRetryier, PullRequestMergeRetryier>();
-            services.AddTransient<IUserNotifier, UserNotifier>();
-
-            services.AddTransient<PullRequestsGovernor>();
-
+            
             var mergeDirectionsProviderInstance = new MergeDirectionsProvider();
             services.AddSingleton<IMergeDirectionsProviderConfigurator>(mergeDirectionsProviderInstance);
             services.AddSingleton<IMergeDirectionsProvider>(mergeDirectionsProviderInstance);

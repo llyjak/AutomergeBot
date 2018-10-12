@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using PerfectGym.AutomergeBot.PullRequestsManualMergingGovernor;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 using PerfectGym.AutomergeBot.SlackClient;
 using Serilog;
@@ -40,6 +41,9 @@ namespace PerfectGym.AutomergeBot
             services.AddTransient<IRepositoryConnectionProvider, RepositoryConnectionProvider>();
             services.AddTransient<IGitHubEventHttpRequestHandler, GitHubEventHttpRequestHandler>();
             services.AddTransient<SlackClientProvider>();
+            services.AddTransient<IUserNotifier, UserNotifier>();
+
+            services.AddTransient<PullRequestsGovernor>();
 
             MergingBranches.Registrations.ConfigureServices(services);
             TempBranchesRemoving.Registrations.ConfigureServices(services);
@@ -69,7 +73,7 @@ namespace PerfectGym.AutomergeBot
 
         private static void StartPullRequestsGovernor(IApplicationBuilder app)
         {
-            var pullRequestGovernor = app.ApplicationServices.GetRequiredService<MergingBranches.PullRequestsGovernor>();
+            var pullRequestGovernor = app.ApplicationServices.GetRequiredService<PullRequestsGovernor>();
             pullRequestGovernor.StartNewWorker();
         }
 
