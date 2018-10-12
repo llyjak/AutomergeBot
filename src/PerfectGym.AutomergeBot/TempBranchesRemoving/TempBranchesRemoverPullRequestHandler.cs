@@ -9,45 +9,57 @@ using PerfectGym.AutomergeBot.RepositoryConnection;
 
 namespace PerfectGym.AutomergeBot.TempBranchesRemoving
 {
-    public interface ITempBranchesRemover
+    public interface ITempBranchesRemoverPullRequestHandler
     {
-        void RemoveAutomergeBotTempBranchedMergedByPullRequest(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext);
+        void Handle(PullRequestInfoModel pullRequestInfoModel);
     }
 
-    public class TempBranchesRemover : ITempBranchesRemover
+    public class TempBranchesRemoverPullRequestHandlerPullRequestHandler : ITempBranchesRemoverPullRequestHandler
     {
-        private readonly ILogger<TempBranchesRemover> _logger;
+        private readonly IRepositoryConnectionProvider _repositoryConnectionProvider;
+        private readonly ILogger<TempBranchesRemoverPullRequestHandlerPullRequestHandler> _logger;
         private readonly AutomergeBotConfiguration _cfg;
 
-        public TempBranchesRemover(ILogger<TempBranchesRemover> logger, IOptionsMonitor<AutomergeBotConfiguration> cfg)
+        public TempBranchesRemoverPullRequestHandlerPullRequestHandler(
+            IRepositoryConnectionProvider repositoryConnectionProvider,
+            ILogger<TempBranchesRemoverPullRequestHandlerPullRequestHandler> logger,
+            IOptionsMonitor<AutomergeBotConfiguration> cfg)
         {
+            _repositoryConnectionProvider = repositoryConnectionProvider;
             _logger = logger;
             _cfg = cfg.CurrentValue;
         }
 
-
-        public void RemoveAutomergeBotTempBranchedMergedByPullRequest(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
+        public void Handle(PullRequestInfoModel pullRequestInfoModel)
         {
-            _logger.LogInformation("Trying to delete no longer needed temp branches");
+            //using (var repoContext = _repositoryConnectionProvider.GetRepositoryConnection())
+            //{
+            //    repoContext.GetAllBranches().Where(b=>b.Commit.Sha==pullRequestInfoModel.HeadSha).FirstOrDefault()
+            //}
 
-            if (IsContainingTempBranches(pushInfo, repoContext, out var tempBranches) &&
-                IsPushedToOneOfTheTargetBranches(pushInfo))
-            {
-                var allBranches = repoContext.GetAllBranches();
+            var headBranchName = pullRequestInfoModel.GetHeadBranchName();
+            _logger.LogInformation("Deleting branch {branchName} merged by pull request {pullRequestNumber}", headBranchName);
 
-                var branchesToDelete = new List<BranchName>();
 
-                foreach (var commitSha in pushInfo.CommitsShas)
-                {
-                    if (FindBranchWithGivenHead(allBranches, commitSha, out var branch)
-                        && branch.Name.StartsWith(_cfg.CreatedBranchesPrefix))
-                    {
-                        branchesToDelete.Add(new BranchName(branch.Name));
-                    }
-                }
+            return;
+            //if (IsContainingTempBranches(pushInfo, repoContext, out var tempBranches) &&
+            //    IsPushedToOneOfTheTargetBranches(pushInfo))
+            //{
+            //    var allBranches = repoContext.GetAllBranches();
 
-                DeleteTempBranches(branchesToDelete.Union(tempBranches), repoContext);
-            }
+            //    var branchesToDelete = new List<BranchName>();
+
+            //    foreach (var commitSha in pushInfo.CommitsShas)
+            //    {
+            //        if (FindBranchWithGivenHead(allBranches, commitSha, out var branch)
+            //            && branch.Name.StartsWith(_cfg.CreatedBranchesPrefix))
+            //        {
+            //            branchesToDelete.Add(new BranchName(branch.Name));
+            //        }
+            //    }
+
+            //    DeleteTempBranches(branchesToDelete.Union(tempBranches), repoContext);
+            //}
         }
 
         private bool IsContainingTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext, out List<BranchName> tempBranches)

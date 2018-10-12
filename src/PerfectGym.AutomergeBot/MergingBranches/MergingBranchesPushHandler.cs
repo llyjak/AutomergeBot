@@ -127,6 +127,6 @@ namespace PerfectGym.AutomergeBot.MergingBranches
 
         }
 
-      
+
     }
 }

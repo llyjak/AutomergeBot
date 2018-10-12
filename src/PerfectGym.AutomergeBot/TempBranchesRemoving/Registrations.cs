@@ -6,7 +6,7 @@ namespace PerfectGym.AutomergeBot.TempBranchesRemoving
     {
         public static void ConfigureServices(IServiceCollection services)
         {
-            services.AddTransient<ITempBranchesRemover, TempBranchesRemover>();
+            services.AddTransient<ITempBranchesRemoverPullRequestHandler, TempBranchesRemoverPullRequestHandlerPullRequestHandler>();
         }
     }
 }

@@ -82,6 +82,11 @@ namespace PerfectGym.AutomergeBot
                 HandlePushNotification(context, requestBody);
                 return true;
             }
+            if (eventName == Consts.GitHubPullRequestEventName)
+            {
+                HandlePullRequestEvent(context, requestBody);
+                return true;
+            }
             if (eventName == Consts.GitHubPingEventName)
             {
                 return true;
@@ -107,6 +112,22 @@ namespace PerfectGym.AutomergeBot
             }
         }
 
-        
+        private void HandlePullRequestEvent(HttpContext context, string payloadJson)
+        {
+            var pullrequestPayload = JsonConvert.DeserializeObject<JObject>(payloadJson);
+            var pullRequestHandler = context.RequestServices.GetRequiredService<TempBranchesRemoving.TempBranchesRemoverPullRequestHandlerPullRequestHandler>();
+            var pullRequestInfoModel = PullRequestInfoModel.CreateFromPayload(pullrequestPayload);
+
+            _logger.LogInformation("Started processing pull_request notification {@payloadModel}", pullRequestInfoModel);
+            try
+            {
+                pullRequestHandler.Handle(pullRequestInfoModel);
+            }
+            finally
+            {
+                _logger.LogInformation("Finished processing pull_request notification {@payloadModel}", pullRequestInfoModel);
+            }
+        }
     }
+
 }
