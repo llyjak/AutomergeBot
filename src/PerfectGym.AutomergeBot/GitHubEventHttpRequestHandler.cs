@@ -93,7 +93,7 @@ namespace PerfectGym.AutomergeBot
         private static void HandlePushNotification(HttpContext context, string payloadJson)
         {
             var pushPayload = JsonConvert.DeserializeObject<JObject>(payloadJson);
-            var pushHandler = context.RequestServices.GetRequiredService<PushHandler>();
+            var pushHandler = context.RequestServices.GetRequiredService<MergingBranchesPushHandler>();
             var pushInfoModel = PushInfoModel.CreateFromPayload(pushPayload);
 
             pushHandler.Handle(pushInfoModel);

@@ -6,9 +6,9 @@ using PerfectGym.AutomergeBot.RepositoryConnection;
 
 namespace PerfectGym.AutomergeBot.MergingBranches
 {
-    public class PushHandler
+    public class MergingBranchesPushHandler
     {
-        private readonly ILogger<PushHandler> _logger;
+        private readonly ILogger<MergingBranchesPushHandler> _logger;
         private readonly IMergeDirectionsProvider _mergeDirectionsProvider;
         private readonly IMergePerformer _mergePerformer;
         private readonly IProcessPushPredicate _processPushPredicate;
@@ -16,7 +16,7 @@ namespace PerfectGym.AutomergeBot.MergingBranches
         private readonly IRepositoryConnectionProvider _repositoryConnectionProvider;
 
 
-        public PushHandler(ILogger<PushHandler> logger,
+        public MergingBranchesPushHandler(ILogger<MergingBranchesPushHandler> logger,
             IMergeDirectionsProvider mergeDirectionsProvider,
             IMergePerformer mergePerformer,
             IProcessPushPredicate processPushPredicate,

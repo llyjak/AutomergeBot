@@ -6,7 +6,7 @@ namespace PerfectGym.AutomergeBot.MergingBranches
     {
         public static void ConfigureServices(IServiceCollection services)
         {
-            services.AddTransient<PushHandler>();
+            services.AddTransient<MergingBranchesPushHandler>();
             services.AddTransient<IProcessPushPredicate, ProcessPushPredicate>();
             services.AddTransient<IMergePerformer, MergePerformer>();
             services.AddTransient<IPullRequestMergeRetryier, PullRequestMergeRetryier>();
