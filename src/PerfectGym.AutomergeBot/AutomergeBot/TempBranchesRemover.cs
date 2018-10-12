@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Octokit;
 using PerfectGym.AutomergeBot.Models;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 
@@ -27,11 +28,24 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 
         public void TryDeleteNoLongerNeededTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
         {
+            _logger.LogInformation("Trying to delete no longer needed temp branches");
+
             if (IsContainingTempBranches(pushInfo, repoContext, out var tempBranches) &&
                 IsPushedToOneOfTheTargetBranches(pushInfo))
             {
-                var branchesFilter = new BranchesFilter(repoContext.GetAllBranches(), _cfg);
-                var branchesToDelete = branchesFilter.GetAllBranchesToDelete(pushInfo.CommitsShas);
+                var allBranches = repoContext.GetAllBranches();
+
+                var branchesToDelete = new List<BranchName>();
+
+                foreach (var commitSha in pushInfo.CommitsShas)
+                {
+                    if (FindBranchWithGivenHead(allBranches, commitSha, out var branch)
+                        && branch.Name.StartsWith(_cfg.CreatedBranchesPrefix))
+                    {
+                        branchesToDelete.Add(new BranchName(branch.Name));
+                    }
+                }
+
                 DeleteTempBranches(branchesToDelete.Union(tempBranches), repoContext);
             }
         }
@@ -66,6 +80,14 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             return _cfg.MergeDirectionsParsed
                 .Any(direction => direction.to.Equals(pushInfo.GetPushedBranchName().Name));
         }
+
+
+        public static bool FindBranchWithGivenHead(IReadOnlyList<Branch> allBranches, string branchHeadCommitSha, out Branch branch)
+        {
+            branch = allBranches.FirstOrDefault(b => b.Commit.Sha == branchHeadCommitSha);
+            return branch != null;
+        }
+
 
         private void DeleteTempBranches(IEnumerable<BranchName> branches, IRepositoryConnectionContext repoContext)
         {
