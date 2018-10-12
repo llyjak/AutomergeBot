@@ -15,26 +15,32 @@ namespace PerfectGym.AutomergeBot.PullRequestsManualMergingGovernor
     /// </summary>
     public class PullRequestsGovernor
     {
-        private readonly AutomergeBotConfiguration _cfg;
+        private readonly IOptionsMonitor<AutomergeBotConfiguration> _cfg;
         private readonly ILogger<PullRequestsGovernor> _logger;
         private readonly IUserNotifier _userNotifier;
         private readonly IRepositoryConnectionProvider _repositoryConnectionProvider;
-        
+        private bool _started;
+
         public PullRequestsGovernor(
             ILogger<PullRequestsGovernor> logger,
-            IOptionsMonitor<AutomergeBotConfiguration> cfg, 
-            IUserNotifier userNotifier, 
+            IOptionsMonitor<AutomergeBotConfiguration> cfg,
+            IUserNotifier userNotifier,
             IRepositoryConnectionProvider repositoryConnectionProvider)
         {
             _logger = logger;
             _userNotifier = userNotifier;
             _repositoryConnectionProvider = repositoryConnectionProvider;
-            _cfg = cfg.CurrentValue;
+            _cfg = cfg;
         }
 
-        public void StartNewWorker()
+        public void StartWorker()
         {
-            var thread = new Thread(Work) {IsBackground = true};
+            if (_started)
+            {
+                throw new Exception("Already started");
+            }
+            _started = true;
+            var thread = new Thread(Work) { IsBackground = true };
             thread.Start();
         }
 
@@ -43,32 +49,36 @@ namespace PerfectGym.AutomergeBot.PullRequestsManualMergingGovernor
             while (true)
             {
                 CheckForPullRequestsAndNotifyUsers();
-                Thread.Sleep(_cfg.PullRequestGovernorConfiguration.ParsedCheckFrequency);
+                Thread.Sleep(_cfg.CurrentValue.PullRequestGovernorConfiguration.ParsedCheckFrequency);
             }
         }
 
         private void CheckForPullRequestsAndNotifyUsers()
         {
+            _logger.LogInformation("CheckForPullRequestsAndNotifyUsers");
             using (var repoContext = _repositoryConnectionProvider.GetRepositoryConnection())
             {
                 var openPullRequests = repoContext.GetOpenPullRequests();
 
                 var filteredPullRequests = FilterPullRequests(openPullRequests);
-
-                _userNotifier.NotifyAboutOpenPullRequests(filteredPullRequests);
+                if (filteredPullRequests.Count > 0)
+                {
+                    _logger.LogInformation("Notifying users there is still open {count} pull requests");
+                    _userNotifier.NotifyAboutOpenPullRequests(filteredPullRequests);
+                }
             }
         }
 
-        private IEnumerable<PullRequest> FilterPullRequests(IReadOnlyList<PullRequest> openPullRequests)
+        private List<PullRequest> FilterPullRequests(IReadOnlyList<PullRequest> openPullRequests)
         {
-            var timeLimit = DateTimeOffset.Now.Add(-_cfg.PullRequestGovernorConfiguration.ParsedPullRequestTimeLimit);
+            var timeLimit = DateTimeOffset.Now.Add(-_cfg.CurrentValue.PullRequestGovernorConfiguration.ParsedPullRequestTimeLimit);
 
             var pullRequests = openPullRequests
                 .Where(pr => pr.Title.StartsWith(Consts.AutomergeBotPullRequestTitlePrefix) &&
                              pr.CreatedAt < timeLimit &&
-                             pr.User.Login == _cfg.AutomergeBotGitHubUserName);
+                             pr.User.Login == _cfg.CurrentValue.AutomergeBotGitHubUserName);
 
-            return pullRequests;
+            return pullRequests.ToList();
         }
     }
 }

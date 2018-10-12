@@ -74,7 +74,7 @@ namespace PerfectGym.AutomergeBot
         private static void StartPullRequestsGovernor(IApplicationBuilder app)
         {
             var pullRequestGovernor = app.ApplicationServices.GetRequiredService<PullRequestsGovernor>();
-            pullRequestGovernor.StartNewWorker();
+            pullRequestGovernor.StartWorker();
         }
 
         private void UpdateMergeDirectionsProviderConfiguration(IServiceProvider serviceProvider)
