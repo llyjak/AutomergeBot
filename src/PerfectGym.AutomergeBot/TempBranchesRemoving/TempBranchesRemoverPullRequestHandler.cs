@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Octokit;
 using PerfectGym.AutomergeBot.Models;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 
@@ -32,91 +29,42 @@ namespace PerfectGym.AutomergeBot.TempBranchesRemoving
 
         public void Handle(PullRequestInfoModel pullRequestInfoModel)
         {
-            //using (var repoContext = _repositoryConnectionProvider.GetRepositoryConnection())
-            //{
-            //    repoContext.GetAllBranches().Where(b=>b.Commit.Sha==pullRequestInfoModel.HeadSha).FirstOrDefault()
-            //}
+            if (!IsPullRequestClosedByMerge(pullRequestInfoModel))
+            {
+                return;
+            }
 
             var headBranchName = pullRequestInfoModel.GetHeadBranchName();
-            _logger.LogInformation("Deleting branch {branchName} merged by pull request {pullRequestNumber}", headBranchName);
-
-
-            return;
-            //if (IsContainingTempBranches(pushInfo, repoContext, out var tempBranches) &&
-            //    IsPushedToOneOfTheTargetBranches(pushInfo))
-            //{
-            //    var allBranches = repoContext.GetAllBranches();
-
-            //    var branchesToDelete = new List<BranchName>();
-
-            //    foreach (var commitSha in pushInfo.CommitsShas)
-            //    {
-            //        if (FindBranchWithGivenHead(allBranches, commitSha, out var branch)
-            //            && branch.Name.StartsWith(_cfg.CreatedBranchesPrefix))
-            //        {
-            //            branchesToDelete.Add(new BranchName(branch.Name));
-            //        }
-            //    }
-
-            //    DeleteTempBranches(branchesToDelete.Union(tempBranches), repoContext);
-            //}
-        }
-
-        private bool IsContainingTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext, out List<BranchName> tempBranches)
-        {
-            tempBranches = GetMergedTempBranchNameOrNull(pushInfo.HeadCommitSha, repoContext);
-            return tempBranches != null;
-        }
-
-        private List<BranchName> GetMergedTempBranchNameOrNull(string mergeCommitSha, IRepositoryConnectionContext repoContext)
-        {
-            _logger.LogDebug("Getting temp merged branches by merge commit {mergeCommitSha}", mergeCommitSha);
-
-            var allBranchesFromRepo = repoContext.GetAllBranches();
-
-            var mergedFromCommit = repoContext.GetCommitParents(mergeCommitSha).ElementAtOrDefault(1);
-            if (mergedFromCommit == null)
+            if (IsAutomergeBotTempBranch(headBranchName))
             {
-                return null;
+                _logger.LogInformation("Removing temporary branch {branchName} merged by pull request {pullRequestNumber}", headBranchName);
+                RemoveBranch(headBranchName);
             }
-            var automergeBotBranches = allBranchesFromRepo
-                .Where(branch => branch.Commit.Sha == mergedFromCommit.Sha)
-                .Where(br => br.Name.StartsWith(_cfg.CreatedBranchesPrefix))
-                .Select(br => new BranchName(br.Name))
-                .ToList();
-            return automergeBotBranches;
         }
 
-        private bool IsPushedToOneOfTheTargetBranches(PushInfoModel pushInfo)
+        private static bool IsPullRequestClosedByMerge(PullRequestInfoModel pullRequestInfoModel)
         {
-            return _cfg.MergeDirectionsParsed
-                .Any(direction => direction.to.Equals(pushInfo.GetPushedBranchName().Name));
+            return pullRequestInfoModel.IsClosedAction && pullRequestInfoModel.Merged;
         }
 
-
-        public static bool FindBranchWithGivenHead(IReadOnlyList<Branch> allBranches, string branchHeadCommitSha, out Branch branch)
+        private bool IsAutomergeBotTempBranch(BranchName headBranchName)
         {
-            branch = allBranches.FirstOrDefault(b => b.Commit.Sha == branchHeadCommitSha);
-            return branch != null;
+            return headBranchName.Name.StartsWith(_cfg.CreatedBranchesPrefix);
         }
 
-
-        private void DeleteTempBranches(IEnumerable<BranchName> branches, IRepositoryConnectionContext repoContext)
+        private void RemoveBranch(BranchName headBranchName)
         {
-            foreach (var branch in branches)
+            using (var repoContext = _repositoryConnectionProvider.GetRepositoryConnection())
             {
-                _logger.LogDebug("Removing temporary {branchName} branch from repository as it is no longer used", branch.Name);
+                _logger.LogDebug("Removing temporary {branchName} branch from repository", headBranchName);
                 try
                 {
-                    repoContext.RemoveBranch(branch);
+                    repoContext.RemoveBranch(headBranchName);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    _logger.LogWarning(
-                        "Temporary branch '{branchName}' no longer exists in the repository. Presumably it has been deleted manually by user",
-                        branch.Name);
+                    _logger.LogWarning(e, "Error when removing branch '{branchName}'. It could be deleted by human", headBranchName);
                 }
-
             }
         }
     }

@@ -26,6 +26,7 @@ namespace PerfectGym.AutomergeBot.Models
 
         public int RepositoryId { get; }
         public string Action { get; }
+        public bool IsClosedAction => Action.ToLowerInvariant() == "closed";
         public int Number { get; }
         public bool Merged { get; }
         public string HeadBranchRef { get; }
