@@ -85,7 +85,7 @@ namespace PerfectGym.AutomergeBot
         {
             conf.WriteTo.File(
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties}{NewLine}{Exception}",
-                path: Path.Combine(logFilesBasePath, $"{nameof(AutomergeBot.AutomergeBot)}.log"),
+                path: Path.Combine(logFilesBasePath, $"AutomergeBot.log"),
                 fileSizeLimitBytes: 10 * 1024 * 1024,
                 rollOnFileSizeLimit: true,
                 retainedFileCountLimit: 10);
@@ -104,7 +104,7 @@ namespace PerfectGym.AutomergeBot
                 .Enrich.FromLogContext()
                 .WriteTo.File(
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{TraceIdentifier}] {Message:lj} {pushNotificationContext}{NewLine}{Exception}",
-                    path: Path.Combine(logFilesBasePath, $"{nameof(AutomergeBot.AutomergeBot)}_easy_monitoring.log"),
+                    path: Path.Combine(logFilesBasePath, $"AutomergeBot_easy_monitoring.log"),
                     fileSizeLimitBytes: 10 * 1024 * 1024,
                     rollOnFileSizeLimit: true,
                     retainedFileCountLimit: 10)

@@ -90,13 +90,15 @@ namespace PerfectGym.AutomergeBot
             return false;
         }
 
-        private static void HandlePushNotification(HttpContext context, string pushPayloadJson)
+        private static void HandlePushNotification(HttpContext context, string payloadJson)
         {
-            var pushPayload = JsonConvert.DeserializeObject<JObject>(pushPayloadJson);
-            var automergeBot = context.RequestServices.GetRequiredService<AutomergeBot.AutomergeBot>();
+            var pushPayload = JsonConvert.DeserializeObject<JObject>(payloadJson);
+            var pushHandler = context.RequestServices.GetRequiredService<AutomergeBot.PushHandler>();
             var pushInfoModel = PushInfoModel.CreateFromPayload(pushPayload);
 
-            automergeBot.Handle(pushInfoModel);
+            pushHandler.Handle(pushInfoModel);
         }
+
+        
     }
 }

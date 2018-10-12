@@ -39,7 +39,7 @@ namespace PerfectGym.AutomergeBot
             services.Configure<AutomergeBotConfiguration>(_configuration);
 
             services.AddTransient<IRepositoryConnectionProvider, RepositoryConnectionProvider>();
-            services.AddTransient<AutomergeBot.AutomergeBot>();
+            services.AddTransient<AutomergeBot.PushHandler>();
             services.AddTransient<IProcessPushPredicate, ProcessPushPredicate>();
             services.AddTransient<ITempBranchesRemover, TempBranchesRemover>();
             services.AddTransient<IMergePerformer, MergePerformer>();

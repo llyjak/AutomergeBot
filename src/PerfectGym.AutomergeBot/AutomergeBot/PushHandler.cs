@@ -7,22 +7,20 @@ using PerfectGym.AutomergeBot.RepositoryConnection;
 
 namespace PerfectGym.AutomergeBot.AutomergeBot
 {
-    public class AutomergeBot
+    public class PushHandler
     {
-        private readonly ILogger<AutomergeBot> _logger;
+        private readonly ILogger<PushHandler> _logger;
         private readonly IMergeDirectionsProvider _mergeDirectionsProvider;
         private readonly IMergePerformer _mergePerformer;
         private readonly IProcessPushPredicate _processPushPredicate;
-        private readonly ITempBranchesRemover _tempBranchesRemover;
         private readonly IPullRequestMergeRetryier _pullRequestMergeRetryier;
         private readonly IRepositoryConnectionProvider _repositoryConnectionProvider;
 
 
-        public AutomergeBot(ILogger<AutomergeBot> logger,
+        public PushHandler(ILogger<PushHandler> logger,
             IMergeDirectionsProvider mergeDirectionsProvider,
             IMergePerformer mergePerformer,
             IProcessPushPredicate processPushPredicate,
-            ITempBranchesRemover tempBranchesRemover,
             IPullRequestMergeRetryier pullRequestMergeRetryier,
             IRepositoryConnectionProvider repositoryConnectionProvider)
         {
@@ -30,7 +28,6 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             _mergeDirectionsProvider = mergeDirectionsProvider;
             _mergePerformer = mergePerformer;
             _processPushPredicate = processPushPredicate;
-            _tempBranchesRemover = tempBranchesRemover;
             _pullRequestMergeRetryier = pullRequestMergeRetryier;
             _repositoryConnectionProvider = repositoryConnectionProvider;
         }
@@ -114,7 +111,6 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
             {
                 using (var repoContext = _repositoryConnectionProvider.GetRepositoryConnection())
                 {
-                    _tempBranchesRemover.TryDeleteNoLongerNeededTempBranches(pushInfo, repoContext);
                     _pullRequestMergeRetryier.RetryMergePullRequestsCreatedBefore(pushInfo, repoContext);
                 }
             }

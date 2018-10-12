@@ -11,7 +11,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
 {
     public interface ITempBranchesRemover
     {
-        void TryDeleteNoLongerNeededTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext);
+        void RemoveAutomergeBotTempBranchedMergedByPullRequest(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext);
     }
 
     public class TempBranchesRemover : ITempBranchesRemover
@@ -26,7 +26,7 @@ namespace PerfectGym.AutomergeBot.AutomergeBot
         }
 
 
-        public void TryDeleteNoLongerNeededTempBranches(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
+        public void RemoveAutomergeBotTempBranchedMergedByPullRequest(PushInfoModel pushInfo, IRepositoryConnectionContext repoContext)
         {
             _logger.LogInformation("Trying to delete no longer needed temp branches");
 
