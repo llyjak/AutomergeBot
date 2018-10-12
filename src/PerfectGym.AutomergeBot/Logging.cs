@@ -103,7 +103,7 @@ namespace PerfectGym.AutomergeBot
             return lc => lc
                 .Enrich.FromLogContext()
                 .WriteTo.File(
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{TraceIdentifier}] {Message:lj} {pushNotificationContext}{NewLine}{Exception}",
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{TraceIdentifier}] {Message:lj} {payloadModel}{NewLine}{Exception}",
                     path: Path.Combine(logFilesBasePath, $"AutomergeBot_easy_monitoring.log"),
                     fileSizeLimitBytes: 10 * 1024 * 1024,
                     rollOnFileSizeLimit: true,

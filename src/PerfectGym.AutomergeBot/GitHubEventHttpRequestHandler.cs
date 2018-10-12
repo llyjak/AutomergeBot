@@ -74,7 +74,7 @@ namespace PerfectGym.AutomergeBot
             return body;
         }
 
-        private static bool TryExecuteHandler(HttpContext context, string requestBody, out string eventName)
+        private bool TryExecuteHandler(HttpContext context, string requestBody, out string eventName)
         {
             eventName = context.Request.Headers[Consts.GitHubEventRequestHeaderName];
             if (eventName == Consts.GitHubPushEventName)
@@ -90,13 +90,21 @@ namespace PerfectGym.AutomergeBot
             return false;
         }
 
-        private static void HandlePushNotification(HttpContext context, string payloadJson)
+        private void HandlePushNotification(HttpContext context, string payloadJson)
         {
             var pushPayload = JsonConvert.DeserializeObject<JObject>(payloadJson);
             var pushHandler = context.RequestServices.GetRequiredService<MergingBranchesPushHandler>();
             var pushInfoModel = PushInfoModel.CreateFromPayload(pushPayload);
 
-            pushHandler.Handle(pushInfoModel);
+            _logger.LogInformation("Started processing push notification {@payloadModel}", pushInfoModel);
+            try
+            {
+                pushHandler.Handle(pushInfoModel);
+            }
+            finally
+            {
+                _logger.LogInformation("Finished processing push notification {@payloadModel}", pushInfoModel);
+            }
         }
 
         

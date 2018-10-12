@@ -33,23 +33,14 @@ namespace PerfectGym.AutomergeBot.MergingBranches
 
         public void Handle(PushInfoModel pushInfo)
         {
-            _logger.LogInformation("Started processing push notification {@pushNotificationContext}", pushInfo);
-
-            try
+            if (!CanProcess(pushInfo))
             {
-                if (!CanProcess(pushInfo))
-                {
-                    return;
-                }
-
-                DoCriticalTasks(pushInfo);
-
-                DoNonCriticalTasks(pushInfo);
+                return;
             }
-            finally
-            {
-                _logger.LogInformation("Finished processing push notification {@pushNotificationContext}", pushInfo);
-            }
+
+            DoCriticalTasks(pushInfo);
+
+            DoNonCriticalTasks(pushInfo);
         }
 
         private bool CanProcess(PushInfoModel pushInfo)
