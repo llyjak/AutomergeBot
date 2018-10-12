@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PerfectGym.AutomergeBot.AutomergeBot;
+using PerfectGym.AutomergeBot.MergingBranches;
 using SlackClientStandard;
 
 namespace PerfectGym.AutomergeBot.SlackClient

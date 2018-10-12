@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Linq;
-using PerfectGym.AutomergeBot.Models;
 using Microsoft.Extensions.Logging;
-using Octokit;
+using PerfectGym.AutomergeBot.Models;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 
-namespace PerfectGym.AutomergeBot.AutomergeBot
+namespace PerfectGym.AutomergeBot.MergingBranches
 {
     public class PushHandler
     {

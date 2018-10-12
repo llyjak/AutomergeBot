@@ -11,7 +11,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using PerfectGym.AutomergeBot.AutomergeBot;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 using PerfectGym.AutomergeBot.SlackClient;
 using Serilog;
@@ -39,19 +38,11 @@ namespace PerfectGym.AutomergeBot
             services.Configure<AutomergeBotConfiguration>(_configuration);
 
             services.AddTransient<IRepositoryConnectionProvider, RepositoryConnectionProvider>();
-            services.AddTransient<AutomergeBot.PushHandler>();
-            services.AddTransient<IProcessPushPredicate, ProcessPushPredicate>();
-            services.AddTransient<ITempBranchesRemover, TempBranchesRemover>();
-            services.AddTransient<IMergePerformer, MergePerformer>();
-            services.AddTransient<IPullRequestMergeRetryier, PullRequestMergeRetryier>();
-            services.AddTransient<IUserNotifier, UserNotifier>();
             services.AddTransient<IGitHubEventHttpRequestHandler, GitHubEventHttpRequestHandler>();
             services.AddTransient<SlackClientProvider>();
-            services.AddTransient<PullRequestsGovernor>();
 
-            var mergeDirectionsProviderInstance = new MergeDirectionsProvider();
-            services.AddSingleton<IMergeDirectionsProviderConfigurator>(mergeDirectionsProviderInstance);
-            services.AddSingleton<IMergeDirectionsProvider>(mergeDirectionsProviderInstance);
+            MergingBranches.Registrations.ConfigureServices(services);
+            TempBranchesRemoving.Registrations.ConfigureServices(services);
         }
 
         public override void Configure(IApplicationBuilder app)
@@ -78,14 +69,14 @@ namespace PerfectGym.AutomergeBot
 
         private static void StartPullRequestsGovernor(IApplicationBuilder app)
         {
-            var pullRequestGovernor = app.ApplicationServices.GetRequiredService<PullRequestsGovernor>();
+            var pullRequestGovernor = app.ApplicationServices.GetRequiredService<MergingBranches.PullRequestsGovernor>();
             pullRequestGovernor.StartNewWorker();
         }
 
         private void UpdateMergeDirectionsProviderConfiguration(IServiceProvider serviceProvider)
         {
             var cfg = serviceProvider.GetRequiredService<IOptionsMonitor<AutomergeBotConfiguration>>().CurrentValue;
-            var mergeDirectionsProviderConfigurator = serviceProvider.GetRequiredService<IMergeDirectionsProviderConfigurator>();
+            var mergeDirectionsProviderConfigurator = serviceProvider.GetRequiredService<MergingBranches.IMergeDirectionsProviderConfigurator>();
 
             mergeDirectionsProviderConfigurator.UpdateMergeDirections(cfg.MergeDirectionsParsed);
         }
@@ -130,7 +121,7 @@ namespace PerfectGym.AutomergeBot
         private static void LogConfigurationUsed(IServiceProvider serviceProvider, ILogger<Startup> logger)
         {
             var cfg = serviceProvider.GetRequiredService<IOptionsMonitor<AutomergeBotConfiguration>>().CurrentValue;
-            var mergeDirectionsProvider = serviceProvider.GetRequiredService<IMergeDirectionsProvider>();
+            var mergeDirectionsProvider = serviceProvider.GetRequiredService<MergingBranches.IMergeDirectionsProvider>();
 
 
             logger.LogInformation("Working with repository: {repositoryOwner}/{repositoryName}", cfg.RepositoryOwner, cfg.RepositoryName);

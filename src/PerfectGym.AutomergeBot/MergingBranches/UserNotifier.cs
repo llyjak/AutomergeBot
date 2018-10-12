@@ -4,7 +4,7 @@ using Octokit;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 using PerfectGym.AutomergeBot.SlackClient;
 
-namespace PerfectGym.AutomergeBot.AutomergeBot
+namespace PerfectGym.AutomergeBot.MergingBranches
 {
     public interface IUserNotifier
     {

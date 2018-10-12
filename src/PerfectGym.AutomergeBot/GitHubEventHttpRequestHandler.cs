@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using PerfectGym.AutomergeBot.AutomergeBot;
+using PerfectGym.AutomergeBot.MergingBranches;
 
 namespace PerfectGym.AutomergeBot
 {
@@ -93,7 +93,7 @@ namespace PerfectGym.AutomergeBot
         private static void HandlePushNotification(HttpContext context, string payloadJson)
         {
             var pushPayload = JsonConvert.DeserializeObject<JObject>(payloadJson);
-            var pushHandler = context.RequestServices.GetRequiredService<AutomergeBot.PushHandler>();
+            var pushHandler = context.RequestServices.GetRequiredService<PushHandler>();
             var pushInfoModel = PushInfoModel.CreateFromPayload(pushPayload);
 
             pushHandler.Handle(pushInfoModel);

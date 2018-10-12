@@ -5,7 +5,7 @@ using Octokit;
 using PerfectGym.AutomergeBot.Models;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 
-namespace PerfectGym.AutomergeBot.AutomergeBot
+namespace PerfectGym.AutomergeBot.MergingBranches
 {
     public interface IPullRequestMergeRetryier
     {

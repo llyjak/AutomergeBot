@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using PerfectGym.AutomergeBot.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Octokit;
+using PerfectGym.AutomergeBot.Models;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 
-namespace PerfectGym.AutomergeBot.AutomergeBot
+namespace PerfectGym.AutomergeBot.MergingBranches
 {
     public interface IMergePerformer
     {

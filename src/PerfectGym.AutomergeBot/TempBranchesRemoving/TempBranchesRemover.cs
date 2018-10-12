@@ -7,7 +7,7 @@ using Octokit;
 using PerfectGym.AutomergeBot.Models;
 using PerfectGym.AutomergeBot.RepositoryConnection;
 
-namespace PerfectGym.AutomergeBot.AutomergeBot
+namespace PerfectGym.AutomergeBot.TempBranchesRemoving
 {
     public interface ITempBranchesRemover
     {
