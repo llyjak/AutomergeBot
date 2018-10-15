@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# prevent from leak credentials from local tests to public github
+appsettings.json
+
 # User-specific files
 *.suo
 *.user
@@ -328,3 +331,4 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
