@@ -63,7 +63,7 @@ namespace PerfectGym.AutomergeBot.PullRequestsManualMergingGovernor
                 var filteredPullRequests = FilterPullRequests(openPullRequests);
                 if (filteredPullRequests.Count > 0)
                 {
-                    _logger.LogInformation("Notifying users there is still open {count} pull requests");
+                    _logger.LogInformation("Notifying users there is still open {count} pull requests", filteredPullRequests.Count);
                     _userNotifier.NotifyAboutOpenPullRequests(filteredPullRequests);
                 }
             }
