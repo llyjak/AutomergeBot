@@ -37,7 +37,7 @@ namespace PerfectGym.AutomergeBot.TempBranchesRemoving
             var headBranchName = pullRequestInfoModel.GetHeadBranchName();
             if (IsAutomergeBotTempBranch(headBranchName))
             {
-                _logger.LogInformation("Removing temporary branch {branchName} merged by pull request {pullRequestNumber}", headBranchName);
+                _logger.LogInformation("Removing temporary branch {branchName} merged by pull request {pullRequestNumber}", headBranchName, pullRequestInfoModel.Number);
                 RemoveBranch(headBranchName);
             }
         }
