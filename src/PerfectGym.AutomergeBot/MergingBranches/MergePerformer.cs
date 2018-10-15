@@ -44,8 +44,7 @@ namespace PerfectGym.AutomergeBot.MergingBranches
             var createPullRequestSucceeded = TryCreatePullRequest(branchForPullRequest, destinationBranchName, repoContext, out var pullRequest, pushInfo, changesOriginalAuthor);
             if (!createPullRequestSucceeded)
             {
-                _logger.LogDebug("Removing temp branch {branchName} because the pull request has not been created", branchForPullRequest);
-                TryRemoveBranch(branchForPullRequest, repoContext);
+                _logger.LogWarning("Temp branch {branchName} for not created pull request has to be removed manually", branchForPullRequest);
                 return;
             }
 
@@ -54,7 +53,6 @@ namespace PerfectGym.AutomergeBot.MergingBranches
             if (repoContext.MergePullRequest(pullRequest.Number, mergeCommitMessage))
             {
                 _logger.LogInformation("Pull request {pullRequestNumber} created and merged", pullRequest.Number);
-                TryRemoveBranch(branchForPullRequest, repoContext);
             }
             else
             {
@@ -183,18 +181,6 @@ namespace PerfectGym.AutomergeBot.MergingBranches
             var sourceCommitShaShort = sourceBranchCommitSha.Substring(0, 8);
             var sanitizedName = BranchName.Sanitize($"{sourceBranch}_{sourceCommitShaShort}_to_{destinationBranchName}");
             return new BranchName($"{prefix}{sanitizedName}");
-        }
-
-        private void TryRemoveBranch(BranchName branchForPullRequest, IRepositoryConnectionContext repoContext)
-        {
-            try
-            {
-                repoContext.RemoveBranch(branchForPullRequest);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Could not remove branch {branchName}. It must be removed manually.", branchForPullRequest);
-            }
         }
     }
 }
