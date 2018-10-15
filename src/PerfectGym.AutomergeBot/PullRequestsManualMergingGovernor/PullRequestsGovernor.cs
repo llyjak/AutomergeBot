@@ -46,9 +46,17 @@ namespace PerfectGym.AutomergeBot.PullRequestsManualMergingGovernor
 
         private void Work()
         {
+            Thread.Sleep(TimeSpan.FromMinutes(1));
             while (true)
             {
-                CheckForPullRequestsAndNotifyUsers();
+                try
+                {
+                    CheckForPullRequestsAndNotifyUsers();
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "CheckForPullRequestsAndNotifyUsers failed");
+                }
                 Thread.Sleep(_cfg.CurrentValue.PullRequestGovernorConfiguration.ParsedCheckFrequency);
             }
         }

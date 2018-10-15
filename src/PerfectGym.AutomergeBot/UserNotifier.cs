@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using PerfectGym.AutomergeBot.RepositoryConnection;
-using PerfectGym.AutomergeBot.SlackClient;
+using SlackClientStandard;
+using SlackClientProvider = PerfectGym.AutomergeBot.SlackClient.SlackClientProvider;
 
 namespace PerfectGym.AutomergeBot
 {
@@ -68,7 +70,14 @@ namespace PerfectGym.AutomergeBot
             {
                 foreach (var pullRequest in filteredPullRequests)
                 {
-                    NotifyAssignedUsersBySlack(pullRequest, client);
+                    try
+                    {
+                        NotifyAssignedUsersBySlack(pullRequest, client);
+                    }
+                    catch (SlackApiErrorException e)
+                    {
+                        _logger.LogError(e, "Failed notifying users assigned to pull request {pullRequestNumber}", pullRequest.Number);
+                    }
                 }
             }
         }
