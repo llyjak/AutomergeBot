@@ -25,7 +25,7 @@ namespace PerfectGym.AutomergeBot.RepositoryConnection
             {
                 if (innerException is ApiException apiException)
                 {
-                    _logger.LogError(innerException, "Failed performing repository call. GitHub Api error details message: {gitHubErrorMessage} {apiErrors}",
+                    _logger.LogError(innerException, "Failed performing repository call. GitHub Api error details message: {gitHubErrorMessage}, api errors: {apiErrors}",
                         apiException.Message, apiException.ApiError?.Errors);
                 }
                 else
