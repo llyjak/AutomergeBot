@@ -9,18 +9,18 @@ namespace PerfectGym.AutomergeBot.Models
             string action,
             int number,
             bool merged,
-            string headBranchRef,
+            string headBranch,
             string headSha,
-            string baseBranchRef,
+            string baseBranch,
             string baseSha)
         {
             RepositoryId = repositoryId;
             Action = action;
             Number = number;
             Merged = merged;
-            HeadBranchRef = headBranchRef;
+            HeadBranch = headBranch;
             HeadSha = headSha;
-            BaseBranchRef = baseBranchRef;
+            BaseBranch = baseBranch;
             BaseSha = baseSha;
         }
 
@@ -29,20 +29,20 @@ namespace PerfectGym.AutomergeBot.Models
         public bool IsClosedAction => Action.ToLowerInvariant() == "closed";
         public int Number { get; }
         public bool Merged { get; }
-        public string HeadBranchRef { get; }
+        public string HeadBranch { get; }
         public string HeadSha { get; }
-        public string BaseBranchRef { get; }
+        public string BaseBranch { get; }
         public string BaseSha { get; }
 
 
         public BranchName GetHeadBranchName()
         {
-            return BranchName.CreateFromRef(HeadBranchRef);
+            return new BranchName(HeadBranch);
         }
 
         public BranchName GetBaseBranchName()
         {
-            return BranchName.CreateFromRef(HeadBranchRef);
+            return new BranchName(BaseBranch);
         }
 
         public static PullRequestInfoModel CreateFromPayload(JObject pushPayload)
