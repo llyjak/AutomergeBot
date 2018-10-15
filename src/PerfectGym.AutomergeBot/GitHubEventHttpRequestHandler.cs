@@ -115,7 +115,7 @@ namespace PerfectGym.AutomergeBot
         private void HandlePullRequestEvent(HttpContext context, string payloadJson)
         {
             var pullrequestPayload = JsonConvert.DeserializeObject<JObject>(payloadJson);
-            var pullRequestHandler = context.RequestServices.GetRequiredService<TempBranchesRemoving.TempBranchesRemoverPullRequestHandlerPullRequestHandler>();
+            var pullRequestHandler = context.RequestServices.GetRequiredService<TempBranchesRemoving.ITempBranchesRemoverPullRequestHandler>();
             var pullRequestInfoModel = PullRequestInfoModel.CreateFromPayload(pullrequestPayload);
 
             _logger.LogInformation("Started processing pull_request notification {@payloadModel}", pullRequestInfoModel);
