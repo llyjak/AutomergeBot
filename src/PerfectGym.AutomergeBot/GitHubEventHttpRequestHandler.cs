@@ -108,7 +108,7 @@ namespace PerfectGym.AutomergeBot
             }
             finally
             {
-                _logger.LogInformation("Finished processing push notification {@payloadModel}", pushInfoModel);
+                _logger.LogInformation("Finished processing push notification");
             }
         }
 
@@ -125,7 +125,7 @@ namespace PerfectGym.AutomergeBot
             }
             finally
             {
-                _logger.LogInformation("Finished processing pull_request notification {@payloadModel}", pullRequestInfoModel);
+                _logger.LogInformation("Finished processing pull_request notification");
             }
         }
     }
