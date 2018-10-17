@@ -74,6 +74,7 @@ namespace PerfectGym.AutomergeBot.RepositoryConnection
             {
                 Body = body
             };
+            _logger.LogTrace("Creating pull request {@requestModel}", newPullRequestModel);
             var pullRequest = client.PullRequest.Create(_repositoryOwner, _repositoryName, newPullRequestModel).Result;
             _logger.LogTrace("Created pull request {pullRequestNumber} from {sourceBranchName} to {destinationBranchName}", pullRequest.Number, sourceBranch, destinationBranch);
 
