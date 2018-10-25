@@ -31,6 +31,7 @@
 - Isolated critical functionality from non-critical. If non-critical fails it does not block critical successful execution.  
   Critical is to create PR for newly pushed changes and merge it. Whereas non-critical is removing temp branches, retrying merge PR etc.
 - Better structure of the source code in the spirit of SRP.
+- Logging details for all errors returned by calls to GitHub API
 
 
 **Bugfixes**
